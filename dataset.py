@@ -21,16 +21,14 @@ class ChemblDataset(Dataset):
             g, x, _ = mol2dgl_single(sm)
             graphs.append(g)
             xs.append(x)
-        self.grpahs = graphs
+        self.graphs = graphs
         self.xs = xs
 
     def __len__(self):
         return len(self.smiles)
 
     def __getitem__(self, item):
-        g, x = self.graphs[item], self.xs(item)
-        output = {'graph':g, 'x':x}
-        return {key: value for key, value in output.items()}
+        return self.graphs[item], self.xs[item]
 
 def get_mol(smiles):
     mol = Chem.MolFromSmiles(smiles)
