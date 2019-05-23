@@ -30,10 +30,12 @@ class GCN(nn.Module):
         return h
 
 class GAE(nn.Module):
-    def __init__(self, in_dim, hidden_dim_1, hidden_dim_2):
+    def __init__(self, in_dim, hidden_dims):
         super(GAE, self).__init__()
-        self.layers = nn.ModuleList([GCN(in_dim, hidden_dim_1, F.relu),
-                                    GCN(hidden_dim_1, hidden_dim_2, F.relu)])
+        layers = [GCN(in_dim, hidden_dims[0], F.relu)]
+        for i in range(1,len(hidden_dims)):
+            layers.append(GCN(hidden_dims[i-1], hidden_dims[i], F.relu))
+        self.layers = nn.ModuleList(layers)
     
     def forward(self, g):
         h = g.ndata['h']

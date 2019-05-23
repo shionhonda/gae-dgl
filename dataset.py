@@ -15,7 +15,7 @@ class ChemblDataset(Dataset):
     def __init__(self, corpus_path='chembl_24.csv', max_size=1000000):
         df = pd.read_csv(corpus_path)
         smiles = df['canonical_smiles'].values[:max_size]
-        smiles = ['Oc1ccccc1', 'c1ccccc1', 'CCC', 'c1cccncc1(=O)O']
+        # smiles = ['Oc1ccccc1', 'c1ccccc1', 'CCC', 'c1cccncc1(=O)O']
         mols = []
         for sm in smiles:
             mols.append(get_mol(sm))
@@ -60,10 +60,10 @@ def mol2dgl_single(mols):
     for mol in mols:
         n_atoms = mol.GetNumAtoms()
         g = DGLGraph()        
-        nodeF = []
+        node_feats = []
         for i, atom in enumerate(mol.GetAtoms()):
             assert i == atom.GetIdx()
-            nodeF.append(atom_features(atom))
+            node_feats.append(atom_features(atom))
         g.add_nodes(n_atoms)
         bond_src = []
         bond_dst = []
@@ -78,6 +78,6 @@ def mol2dgl_single(mols):
             bond_dst.append(begin_idx)
         g.add_edges(bond_src, bond_dst)
         
-        g.ndata['h'] = torch.Tensor([a.tolist() for a in nodeF])
+        g.ndata['h'] = torch.Tensor([a.tolist() for a in node_feats])
         cand_graphs.append(g)
     return cand_graphs
