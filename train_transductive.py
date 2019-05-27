@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import dgl
 from dgl.data import register_data_args, load_data
@@ -11,27 +12,8 @@ from dgl import DGLGraph
 
 from gae import GAE
 
-
-class Trainer:
-    def __init__(self, model, gpu_ids=[]):
-        self.model = model
-        self.optim = torch.optim.Adam(self.model.parameters(), lr=1e-3)
-        self.criterion = nn.MSELoss()
-        print('Total Parameters:', sum([p.nelement() for p in self.model.parameters()]))
-
-    def iteration(self, g, train=True):
-        adj_rec = self.model.forward(g)
-        loss = self.criterion(adj_rec, g.adjacency_matrix().to_dense())
-        if train:
-            self.optim.zero_grad()
-            loss.backward()
-            self.optim.step()    
-        return loss.item()
-
-def collate(samples):
-    graphs = list(samples)
-    bg = dgl.batch(graphs)
-    return bg
+def loss_function(logits, labels, pos_weight):
+    return F.binary_cross_entropy_with_logits(logits, labels, pos_weight=pos_weight)
 
 def main():
     parser = argparse.ArgumentParser(description='GCN')
@@ -40,28 +22,12 @@ def main():
     # load and preprocess dataset
     data = load_data(args)
     features = torch.FloatTensor(data.features)
-    labels = torch.LongTensor(data.labels)
-    train_mask = torch.ByteTensor(data.train_mask)
-    val_mask = torch.ByteTensor(data.val_mask)
-    test_mask = torch.ByteTensor(data.test_mask)
     in_feats = features.shape[1]
-    n_classes = data.num_labels
-    n_edges = data.graph.number_of_edges()
-    
-    print("""----Data statistics------'
-      #Edges %d
-      #Nodes %d
-      #Train samples %d
-      #Val samples %d
-      #Test samples %d""" %
-          (n_edges, data.graph.number_of_nodes(),
-              train_mask.sum().item(),
-              val_mask.sum().item(),
-              test_mask.sum().item()))
     
     model = GAE(in_feats, [32,16])
-    trainer = Trainer(model)
-    n_epochs = 50
+    optim = torch.optim.Adam(model.parameters(), lr=1e-2)
+    
+    n_epochs = 200
     losses = []
     print('Training Start')
     for epoch in tqdm(range(n_epochs)):
@@ -71,10 +37,18 @@ def main():
         norm = torch.pow(degs, -0.5)
         norm[torch.isinf(norm)] = 0
         g.ndata['norm'] = norm.unsqueeze(1)
-        g.ndata['h'] = features
-        loss = trainer.iteration(g)
-        losses.append(loss)
+        adj = g.adjacency_matrix().to_dense()
+        #pos_weight = torch.Tensor([float(adj.shape[0] * adj.shape[0] - adj.sum()) / adj.sum()])
+        pos_weight = torch.Tensor([1])
+        model.train()
+        adj_logits = model.forward(g, features)
+        loss = loss_function(adj_logits, adj, pos_weight=pos_weight)
+        optim.zero_grad()
+        loss.backward()
+        optim.step()
+        losses.append(loss.item())
         print('Epoch: {:02d} | Loss: {:.5f}'.format(epoch, loss))
+        print(torch.sigmoid(adj_logits))
     
     plt.plot(losses)
     plt.xlabel('iteration')

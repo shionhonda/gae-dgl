@@ -11,10 +11,10 @@ from gcn import GCN
 #from gcn_mp import GCN
 #from gcn_spmv import GCN
 
-def evaluate(model, features, labels, mask):
+def evaluate(model, g, features, labels, mask):
     model.eval()
     with torch.no_grad():
-        logits = model(features)
+        logits = model(g, features)
         logits = logits[mask]
         labels = labels[mask]
         _, indices = torch.max(logits, dim=1)
@@ -54,25 +54,10 @@ def main(args):
         val_mask = val_mask.cuda()
         test_mask = test_mask.cuda()
 
-    # graph preprocess and calculate normalization factor
-    g = data.graph
-    # add self loop
-    if args.self_loop:
-            g.remove_edges_from(g.selfloop_edges())
-            g.add_edges_from(zip(g.nodes(), g.nodes()))
-    g = DGLGraph(g)
-    n_edges = g.number_of_edges()
-    # normalization
-    degs = g.in_degrees().float()
-    norm = torch.pow(degs, -0.5)
-    norm[torch.isinf(norm)] = 0
-    if cuda:
-        norm = norm.cuda()
-    g.ndata['norm'] = norm.unsqueeze(1)
+    
 
     # create GCN model
-    model = GCN(g,
-                in_feats,
+    model = GCN(in_feats,
                 args.n_hidden,
                 n_classes,
                 args.n_layers,
@@ -92,11 +77,27 @@ def main(args):
     dur = []
     accs = []
     for epoch in range(args.n_epochs):
+        # graph preprocess and calculate normalization factor
+        g = data.graph
+        # add self loop
+        if args.self_loop:
+                g.remove_edges_from(g.selfloop_edges())
+                g.add_edges_from(zip(g.nodes(), g.nodes()))
+        g = DGLGraph(g)
+        n_edges = g.number_of_edges()
+        # normalization
+        degs = g.in_degrees().float()
+        norm = torch.pow(degs, -0.5)
+        norm[torch.isinf(norm)] = 0
+        if cuda:
+            norm = norm.cuda()
+        g.ndata['norm'] = norm.unsqueeze(1)
+
         model.train()
         if epoch >= 3:
             t0 = time.time()
         # forward
-        logits = model(features)
+        logits = model(g, features)
         loss = loss_fcn(logits[train_mask], labels[train_mask])
 
         optimizer.zero_grad()
@@ -106,14 +107,14 @@ def main(args):
         if epoch >= 3:
             dur.append(time.time() - t0)
 
-        acc = evaluate(model, features, labels, val_mask)
+        acc = evaluate(model, g, features, labels, val_mask)
         accs.append(acc)
         print("Epoch {:05d} | Time(s) {:.4f} | Loss {:.4f} | Accuracy {:.4f} | "
               "ETputs(KTEPS) {:.2f}". format(epoch, np.mean(dur), loss.item(),
                                              acc, n_edges / np.mean(dur) / 1000))
 
     print()
-    acc = evaluate(model, features, labels, test_mask)
+    acc = evaluate(model, g, features, labels, test_mask)
     print("Test Accuracy {:.4f}".format(acc))
     plt.plot(accs)
     plt.xlabel('epoch')
