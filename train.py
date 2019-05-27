@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from tqdm import tqdm
 import torch
 import torch.nn as nn
@@ -8,10 +10,9 @@ from dataset import ChemblDataset
 from gae import GAE
 
 class Trainer:
-    def __init__(self, model, dataloader, gpu_ids=[]):
+    def __init__(self, model, gpu_ids=[]):
         self.model = model
-        self.train_data = dataloader
-        self.optim = torch.optim.Adam(self.model.parameters(), lr=1e-6)
+        self.optim = torch.optim.Adam(self.model.parameters(), lr=1e-3)
         self.criterion = nn.MSELoss()
         print('Total Parameters:', sum([p.nelement() for p in self.model.parameters()]))
 
@@ -30,18 +31,29 @@ def collate(samples):
     return bg
 
 def main():
-    model = GAE(39, [256,256])
+    model = GAE(39, [32,16])
     dataset = ChemblDataset(max_size=10000)
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate)
-    trainer = Trainer(model, dataloader)
-    n_epochs = 100
+    trainer = Trainer(model)
+    n_epochs = 5
+    losses = []
+    it = 0
     print('Training Start')
     for epoch in tqdm(range(n_epochs)):
         for bg in tqdm(dataloader):
             bg.set_e_initializer(dgl.init.zero_initializer)
             bg.set_n_initializer(dgl.init.zero_initializer)  
             loss = trainer.iteration(bg)
+            if it%100 == 0:
+                losses.append(loss)
+            it += 1
         print('Epoch: {:02d} | Loss: {:.5f}'.format(epoch, loss))
+    
+    plt.plot(losses)
+    plt.xlabel('iteration x100')
+    plt.ylabel('train loss')
+    plt.grid()
+    plt.show()
 
 
 if __name__=='__main__':
