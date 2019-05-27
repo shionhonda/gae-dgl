@@ -38,8 +38,7 @@ def main():
         norm[torch.isinf(norm)] = 0
         g.ndata['norm'] = norm.unsqueeze(1)
         adj = g.adjacency_matrix().to_dense()
-        #pos_weight = torch.Tensor([float(adj.shape[0] * adj.shape[0] - adj.sum()) / adj.sum()])
-        pos_weight = torch.Tensor([1])
+        pos_weight = torch.Tensor([float(adj.shape[0] * adj.shape[0] - adj.sum()) / adj.sum()])
         model.train()
         adj_logits = model.forward(g, features)
         loss = loss_function(adj_logits, adj, pos_weight=pos_weight)
