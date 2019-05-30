@@ -27,7 +27,7 @@ def main():
     model = GAE(in_feats, [32,16])
     optim = torch.optim.Adam(model.parameters(), lr=1e-2)
     
-    n_epochs = 200
+    n_epochs = 500
     losses = []
     print('Training Start')
     for epoch in tqdm(range(n_epochs)):
@@ -41,6 +41,7 @@ def main():
         pos_weight = torch.Tensor([float(adj.shape[0] * adj.shape[0] - adj.sum()) / adj.sum()])
         model.train()
         adj_logits = model.forward(g, features)
+        print(torch.sigmoid(adj_logits))
         loss = loss_function(adj_logits, adj, pos_weight=pos_weight)
         optim.zero_grad()
         loss.backward()
