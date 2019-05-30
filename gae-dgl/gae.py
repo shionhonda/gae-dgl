@@ -16,7 +16,7 @@ class NodeApplyModule(nn.Module):
         return {'h': h}
 
 gcn_msg = fn.copy_src(src='h', out='m')
-gcn_reduce = fn.sum(msg='m', out='h')
+gcn_reduce = fn.sum(msg='m', out='h')  # sum aggregation
 
 class GCN(nn.Module):
     def __init__(self, in_feats, out_feats, activation):
@@ -29,15 +29,6 @@ class GCN(nn.Module):
         g.apply_nodes(func=self.apply_mod)
         h =  g.ndata.pop('h')
         return h
-
-# class GCN(nn.Module):
-#     def __init__(self, in_feats, out_feats, activation):
-#         super(GCN, self).__init__()
-#         self.layer = GraphConv(in_feats, out_feats, activation=activation)
-
-#     def forward(self, g, features):
-#         h = self.layer(features, g)
-#         return g, h
 
 class GAE(nn.Module):
     def __init__(self, in_dim, hidden_dims):
@@ -58,30 +49,7 @@ class GAE(nn.Module):
         adj_rec = self.decoder(h)
         return adj_rec
 
-# class GAE(nn.Module):
-#     def __init__(self, in_dim, hidden_dims, dropout=0.1):
-#         super(GAE, self).__init__()
-#         self.layers = nn.ModuleList()
-#         # input layer
-#         self.layers.append(GraphConv(in_dim, hidden_dims[0], activation=F.relu))
-#         # output layer
-#         for i in range(1,len(hidden_dims)):
-#             self.layers.append(GraphConv(hidden_dims[i-1], hidden_dims[i]))
-#         self.dropout = nn.Dropout(p=dropout)
-#         self.decoder = InnerProductDecoder(activation=lambda x:x)
-
-#     def forward(self, g, features):
-#         h = features
-#         for i, layer in enumerate(self.layers):
-#             if i != 0:
-#                 h = self.dropout(h)
-#             h = layer(h, g)
-#         adj_rec = self.decoder(h)
-#         return adj_rec
-
 class InnerProductDecoder(nn.Module):
-    """Decoder for using inner product for prediction."""
-
     def __init__(self, activation=torch.sigmoid, dropout=0.1):
         super(InnerProductDecoder, self).__init__()
         self.dropout = dropout

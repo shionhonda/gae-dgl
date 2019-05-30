@@ -15,16 +15,13 @@ class ChemblDataset(Dataset):
     def __init__(self, corpus_path='chembl_24.csv', max_size=1000000):
         df = pd.read_csv(corpus_path)
         smiles = df['canonical_smiles'].values[:max_size]
-        # smiles = ['Oc1ccccc1', 'c1ccccc1', 'CCC', 'c1cccncc1(=O)O']
         mols = []
-        for i,sm in enumerate(smiles):
+        for sm in smiles:
             mol = get_mol(sm)
             if mol is not None:
                 mols.append(mol)
             else:
                 print('Could not construct a molecule:', sm)
-        # import os
-        # mols = [m for m in Chem.SDMolSupplier(os.path.join(RDConfig.RDDocsDir,'Book/data/solubility.train.sdf'))]
         self.graphs = mol2dgl_single(mols)
 
     def __len__(self):

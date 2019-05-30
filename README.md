@@ -1,1 +1,2 @@
-# Graph Autoencoder
+# gae-dgl
+Graph Autoencoder implemented with DGL
