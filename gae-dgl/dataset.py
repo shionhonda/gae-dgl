@@ -1,5 +1,4 @@
-import numpy as np
-import pandas as pd
+from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset
 from dgl import DGLGraph
@@ -12,11 +11,9 @@ ATOM_FDIM = len(ELEM_LIST) + 6 + 5 + 4 + 1  # 23 + degree, charge, is_aromatic =
 
 
 class ChemblDataset(Dataset):
-    def __init__(self, corpus_path='chembl_24.csv', max_size=1000000):
-        df = pd.read_csv(corpus_path)
-        smiles = df['canonical_smiles'].values[:max_size]
+    def __init__(self, smiles):
         mols = []
-        for sm in smiles:
+        for sm in tqdm(smiles):
             mol = get_mol(sm)
             if mol is not None:
                 mols.append(mol)
