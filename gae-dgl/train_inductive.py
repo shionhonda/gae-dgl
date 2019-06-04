@@ -41,23 +41,14 @@ class Trainer:
         if train:
             self.optim.zero_grad()
             loss.backward()
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
             self.optim.step()    
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         return loss.item()
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
 
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
     def save(self, epoch, save_dir):
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         output_path = save_dir + '/ep{:02}.pkl'.format(epoch)
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         torch.save(self.model.state_dict(), output_path)
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         #self.model.to(self.device)
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
-
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
+        
 def plot(train_losses, val_losses):
     plt.plot(train_losses, label='train')
     plt.plot(val_losses, label='val')
