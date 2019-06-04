@@ -100,7 +100,7 @@ def main():
         val_loss /= len(val_loader)
         val_losses.append(val_loss)
         print('Epoch: {:02d} | Train Loss: {:.4f} | Validation Loss: {:.4f}'.format(epoch, train_loss, val_loss))
-    plot(train_loss, val_losses)
+    plot(train_losses, val_losses)
 
 
 if __name__=='__main__':
