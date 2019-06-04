@@ -48,7 +48,7 @@ class Trainer:
         output_path = save_dir + '/ep{:02}.pkl'.format(epoch)
         torch.save(self.model.state_dict(), output_path)
         #self.model.to(self.device)
-        
+
 def plot(train_losses, val_losses):
     plt.plot(train_losses, label='train')
     plt.plot(val_losses, label='val')
@@ -100,7 +100,7 @@ def main():
         val_loss /= len(val_loader)
         val_losses.append(val_loss)
         print('Epoch: {:02d} | Train Loss: {:.4f} | Validation Loss: {:.4f}'.format(epoch, train_loss, val_loss))
-    plot(train, val_losses)
+    plot(train_loss, val_losses)
 
 
 if __name__=='__main__':
