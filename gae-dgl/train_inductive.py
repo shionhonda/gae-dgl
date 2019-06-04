@@ -1,4 +1,5 @@
 import argparse
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -69,6 +70,9 @@ def main():
     parser.add_argument('--lr', type=float, default=1e-3, help='Adam learning rate')
     parser.add_argument('--gpu', metavar='N', type=int, nargs='+', help='list of GPU IDs to use')
     args = parser.parse_args()
+
+    if not os.path.exists(args.save_dir):
+        os.makedirs(args.save_dir)
 
     model = GAE(args.in_dim, [32,16])
     print('Loading data')
