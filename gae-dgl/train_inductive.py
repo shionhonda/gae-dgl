@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+import dill
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,7 +27,7 @@ def loss_function(logits, labels, pos_weight):
 class Trainer:
     def __init__(self, model, args):
         self.model = model
-        self.optim = torch.optim.Adam(self.model.parameters(), lr=1e-3)
+        self.optim = torch.optim.Adam(self.model.parameters(), lr=args.lr)
         # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # if self.device == 'cuda':
         #     self.model = nn.DataParallel(self.model, args.gpu_ids)
@@ -40,14 +41,23 @@ class Trainer:
         if train:
             self.optim.zero_grad()
             loss.backward()
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
             self.optim.step()    
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         return loss.item()
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
 
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
     def save(self, epoch, save_dir):
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         output_path = save_dir + '/ep{:02}.pkl'.format(epoch)
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         torch.save(self.model.state_dict(), output_path)
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
         #self.model.to(self.device)
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
 
+    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
 def plot(train_losses, val_losses):
     plt.plot(train_losses, label='train')
     plt.plot(val_losses, label='val')
@@ -60,7 +70,7 @@ def plot(train_losses, val_losses):
 def main():
     parser = argparse.ArgumentParser(description='Pretrain SMILES Transformer')
     parser.add_argument('--n_epochs', '-e', type=int, default=10, help='number of epochs')
-    parser.add_argument('--data_file', '-d', type=str, default='chembl_24.csv', help='data file (.csv)')
+    parser.add_argument('--data_file', '-d', type=str, default='data/graphs.pkl', help='data file')
     parser.add_argument('--save_dir', '-s', type=str, default='../result', help='result directry')
     parser.add_argument('--in_dim', '-i', type=int, default=39, help='input dimension')
     parser.add_argument('--hidden_dims', metavar='N', type=int, nargs='+', help='list of hidden dimensions')
@@ -69,16 +79,16 @@ def main():
     parser.add_argument('--gpu', metavar='N', type=int, nargs='+', help='list of GPU IDs to use')
     args = parser.parse_args()
 
-    model = GAE(39, [32,16])
+    model = GAE(args.in_dim, [32,16])
     print('Loading data')
-    smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
-
-    train_smiles, val_smiles = train_test_split(smiles, test_size=10000)
-    train_dataset = ChemblDataset(train_smiles[:10])
-    #val_dataset = ChemblDataset(val_smiles)
-    del train_smiles, val_smiles
-    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, collate_fn=collate)
-    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, collate_fn=collate)
+    with open(args.data_file, 'rb') as f:
+        graphs = dill.load(f)
+    train_graphs, val_graphs = train_test_split(graphs, test_size=10000)
+    train_dataset = ChemblDataset(train_graphs)
+    val_dataset = ChemblDataset(val_graphs)
+    del train_graphs, val_graphs
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate)
     trainer = Trainer(model, args)
     train_losses, val_losses = [], []
     print('Training Start')
