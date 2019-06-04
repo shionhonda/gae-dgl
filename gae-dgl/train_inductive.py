@@ -72,9 +72,10 @@ def main():
     model = GAE(39, [32,16])
     print('Loading data')
     smiles = pd.read_csv(args.data_file)['canonical_smiles'].values
+
     train_smiles, val_smiles = train_test_split(smiles, test_size=10000)
-    train_dataset = ChemblDataset(train_smiles)
-    val_dataset = ChemblDataset(val_smiles)
+    train_dataset = ChemblDataset(train_smiles[:10])
+    #val_dataset = ChemblDataset(val_smiles)
     del train_smiles, val_smiles
     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, collate_fn=collate)
     val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, collate_fn=collate)

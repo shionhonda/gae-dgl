@@ -1,5 +1,6 @@
-*.csv
+gae-dgl/data/*
+result/*
 *.ipynb
 __pycache__
 .ipynb_checkpoints
-result/*
+
