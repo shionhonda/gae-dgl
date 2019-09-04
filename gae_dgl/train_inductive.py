@@ -78,6 +78,7 @@ def main():
     print('Loading data')
     with open(args.data_file, 'rb') as f:
         graphs = dill.load(f)
+    print(len(graphs))
     train_graphs, val_graphs = train_test_split(graphs, test_size=10000)
     train_dataset = ChemblDataset(train_graphs)
     val_dataset = ChemblDataset(val_graphs)

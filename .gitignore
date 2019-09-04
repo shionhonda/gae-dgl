@@ -1,4 +1,4 @@
-gae-dgl/data/*
+gae_dgl/data/*
 result/*
 *.ipynb
 __pycache__

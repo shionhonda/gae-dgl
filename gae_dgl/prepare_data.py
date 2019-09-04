@@ -1,16 +1,16 @@
 import argparse
-import pandas as pd
 import dill
-from tqdm import tqdm
-import torch
+import pandas as pd
 from dgl import DGLGraph
+import rdkit
 from rdkit import Chem
-from rdkit.Chem import RDConfig
+import torch
+from tqdm import tqdm
 
 ELEM_LIST = ['C', 'N', 'O', 'S', 'F', 'Si', 'P', 'Cl', 'Br', 'Mg', 'Na', 'Ca', 'Fe', 'Al', 'I', 'B', 'K', 'Se',
              'Zn', 'H', 'Cu', 'Mn', 'unknown']
 ATOM_FDIM = len(ELEM_LIST) + 6 + 5 + 4 + 1  # 23 + degree, charge, is_aromatic = 39
-
+rdkit.RDLogger.logger().setLevel(rdkit.RDLogger.CRITICAL) # turn off RDKit logger
 
 def get_mol(smiles):
     mol = Chem.MolFromSmiles(smiles)
@@ -31,15 +31,14 @@ def atom_features(atom):
             + onek_encoding_unk(int(atom.GetChiralTag()), [0,1,2,3])
             + [atom.GetIsAromatic()]))
 
-def mol2dgl_single(mols):
+def mols2graphs(mols):
     """
     inputs
       mols: a list of molecules
     outputs
       cand_graphs: a list of dgl graphs 
     """
-    cand_graphs = []
-    print('Transforming molecules to DGLGraphs')
+    graphs = []
     for mol in tqdm(mols):
         n_atoms = mol.GetNumAtoms()
         g = DGLGraph()        
@@ -62,8 +61,20 @@ def mol2dgl_single(mols):
         g.add_edges(bond_src, bond_dst)
         
         g.ndata['h'] = torch.Tensor([a.tolist() for a in node_feats])
-        cand_graphs.append(g)
-    return cand_graphs
+        graphs.append(g)
+    return graphs
+
+def smiles2mols(smiles):
+    mols = []
+    for sm in tqdm(smiles):
+        mol = get_mol(sm)
+        if mol is not None:
+            mols.append(mol)
+        else:
+            print('Could not construct a molecule:', sm)
+    return mols
+
+
 
 def main():
     parser = argparse.ArgumentParser(description='Pretrain SMILES Transformer')
@@ -73,17 +84,13 @@ def main():
 
     print('Loading data')
     smiles = pd.read_csv(args.save_dir + '/' + args.data_file)['canonical_smiles'].values
-    mols = []
     print('Transforming SMILES to molecules')
-    for sm in tqdm(smiles):
-        mol = get_mol(sm)
-        if mol is not None:
-            mols.append(mol)
-        else:
-            print('Could not construct a molecule:', sm)
+    mols = smiles2mols(smiles)
+    del smiles
     with open(args.save_dir + '/mols.pkl', 'wb') as f:
         dill.dump(mols, f)
-    graphs = mol2dgl_single(mols)
+    print('Transforming molecules to DGLGraphs')
+    graphs = mols2graphs(mols)
     del mols
     with open(args.save_dir + '/graphs.pkl', 'wb') as f:
         dill.dump(graphs, f)

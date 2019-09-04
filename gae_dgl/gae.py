@@ -49,6 +49,12 @@ class GAE(nn.Module):
         adj_rec = self.decoder(h)
         return adj_rec
 
+    def encode(self, g):
+        h = g.ndata['h']
+        for conv in self.layers:
+            h = conv(g, h)
+        return h
+
 class InnerProductDecoder(nn.Module):
     def __init__(self, activation=torch.sigmoid, dropout=0.1):
         super(InnerProductDecoder, self).__init__()
