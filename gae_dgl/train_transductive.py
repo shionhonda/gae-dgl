@@ -32,6 +32,7 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
+    # TODO: train test split
     # load and preprocess dataset
     data = load_data(args)
     features = torch.FloatTensor(data.features)

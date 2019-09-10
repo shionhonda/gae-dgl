@@ -15,7 +15,7 @@ tqdm
 ```
 
 ## Usage
-### Transductive tasks (under development)
+### Transductive tasks ( :construction: under development :construction: )
 Reproduce the results of the paper [1] by the following command.
 
 ```
@@ -37,5 +37,22 @@ Interestingly, I found GAE also works in inductive settings even though it was n
 
 ![](zinc250k.png)
 
+Is learned feature useful for predicting molecular properties? Let's check with simple examples. Here I use ESOL (solubility regression) dataset from [2], which can be downloaded [here](http://moleculenet.ai/datasets-1).
+
+|Feature + Model|RMSE|R2|  
+|:--:|:--:|:--:|
+|GAE + Ridge|1.813|0.585|  
+|GAE + MLP|1.216|0.732|    
+|GAE + Random Forest|1.424|0.688|    
+|ECFP + Ridge|2.271|0.480|  
+|ECFP + MLP|2.034|0.549|    
+|ECFP + Random Forest|1.668|0.643|    
+
+ECFP is a hash-based binary feature of molecules ($D=1024$), which is the most common algorithm as a baseline.  
+GAE feature is a concatenation of mean, sum, and max aggregation of the hidden vector $\textbf{H} \in \mathbb{R}^{N\times 16}$, so its dimension is 48.  
+GAE performs better than ECFP in all the combination with three regression models: Ridge, Multi-layer perceptron, and Random Forest.
+
 ## References
 [1] Thomas N. Kipf and Max Welling. "[Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)." NIPS. 2016.
+
+[2] Zhenqin Wu, Bharath Ramsundar, Evan N. Feinberg, Joseph Gomes, Caleb Geniesse, Aneesh S. Pappu, Karl Leswing, Vijay Pande. "[MoleculeNet: A Benchmark for Molecular Machine Learning](https://pubs.rsc.org/en/content/articlelanding/2018/sc/c7sc02664a)", Chemical Science. 2018.

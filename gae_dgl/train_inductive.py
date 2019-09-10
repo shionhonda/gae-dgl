@@ -72,7 +72,6 @@ def main():
 
     model = GAE(args.in_dim, args.hidden_dims)
     model.to(device)
-    #model.to('cuda:{}'.format(args.gpu_id))
     print('Loading data')
     with open(args.data_file, 'rb') as f:
         graphs = dill.load(f)
