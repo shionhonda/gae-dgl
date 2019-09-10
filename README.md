@@ -1,6 +1,7 @@
 # GAE-DGL
 Graph Auto-encoder [1] implemented with DGL by Shion Honda.  
-Official implementation by the authors is [here](https://github.com/tkipf/gae) (TensorFlow, Python 2.7).
+Official implementation by the authors is [here](https://github.com/tkipf/gae) (TensorFlow, Python 2.7).  
+Unlike other implementations, this repository supports inductive tasks using molecular graphs (ZINC-250k), showing the power of graph representation learning with GAE. 
 
 ## Installation
 ### Prerequisites
@@ -38,7 +39,7 @@ Interestingly, I found GAE also works in inductive settings even though it was n
 ![](zinc250k.png)
 
 ## Potential Application to Chemistry
-Is learned feature useful for predicting molecular properties? Let's check with simple examples. Here I use ESOL (solubility regression) dataset from [2], which can be downloaded [here](http://moleculenet.ai/datasets-1).
+Is learned feature through pre-training really useful for predicting molecular properties? Let's check with simple examples. Here I use ESOL (solubility regression) dataset from [2], which can be downloaded [here](http://moleculenet.ai/datasets-1).
 
 |Feature + Model|RMSE|R2|  
 |:--:|:--:|:--:|
