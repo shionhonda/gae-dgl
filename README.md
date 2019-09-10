@@ -42,7 +42,7 @@ Is learned feature useful for predicting molecular properties? Let's check with 
 |Feature + Model|RMSE|R2|  
 |:--:|:--:|:--:|
 |GAE + Ridge|1.813|0.585|  
-|GAE + MLP|1.216|0.732|    
+|**GAE + MLP**|**1.216**|**0.732**|    
 |GAE + Random Forest|1.424|0.688|    
 |ECFP + Ridge|2.271|0.480|  
 |ECFP + MLP|2.034|0.549|    
