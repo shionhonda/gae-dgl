@@ -1,9 +1,9 @@
 from torch.utils.data import Dataset
 
-class ChemblDataset(Dataset):
+class MolDataset(Dataset):
     def __init__(self, graphs):
         self.graphs = graphs
-        print('Dataset inculudes {:d} graphs'.format(len(graphs)))
+        print('Dataset includes {:d} graphs'.format(len(graphs)))
 
     def __len__(self):
         return len(self.graphs)

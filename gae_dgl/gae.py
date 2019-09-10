@@ -34,10 +34,15 @@ class GAE(nn.Module):
     def __init__(self, in_dim, hidden_dims):
         super(GAE, self).__init__()
         layers = [GCN(in_dim, hidden_dims[0], F.relu)]
-        if len(hidden_dims)>2:
-            for i in range(1,len(hidden_dims)-1):
-                layers.append(GCN(hidden_dims[i-1], hidden_dims[i], F.relu))
-        layers.append(GCN(hidden_dims[-2], hidden_dims[-1], lambda x:x))
+        if len(hidden_dims)>=2:
+            layers = [GCN(in_dim, hidden_dims[0], F.relu)]
+            for i in range(1,len(hidden_dims)):
+                if i != len(hidden_dims)-1:
+                    layers.append(GCN(hidden_dims[i-1], hidden_dims[i], F.relu))
+                else:
+                    layers.append(GCN(hidden_dims[i-1], hidden_dims[i], lambda x:x))
+        else:
+            layers = [GCN(in_dim, hidden_dims[0], lambda x:x)]
         self.layers = nn.ModuleList(layers)
         self.decoder = InnerProductDecoder(activation=lambda x:x)
     

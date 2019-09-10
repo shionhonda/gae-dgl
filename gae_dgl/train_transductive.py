@@ -1,24 +1,37 @@
 import argparse
+import os
 
 import dgl
-from dgl.data import register_data_args, load_data
 from dgl import DGLGraph
+from dgl.data import register_data_args, load_data
+import dill
 import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.model_selection import train_test_split
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch.nn.functional import binary_cross_entropy_with_logits as BCELoss
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from gae import GAE
 
-def loss_function(logits, labels, pos_weight):
-    return F.binary_cross_entropy_with_logits(logits, labels, pos_weight=pos_weight)
+parser = argparse.ArgumentParser(description='Pre-train GAE')
+register_data_args(parser)
+parser.add_argument('--n_epochs', '-e', type=int, default=10, help='number of epochs')
+parser.add_argument('--save_dir', '-s', type=str, default='../result', help='result directry')
+parser.add_argument('--in_dim', '-i', type=int, default=39, help='input dimension')
+parser.add_argument('--hidden_dims', metavar='N', type=int, nargs='+', help='list of hidden dimensions')
+parser.add_argument('--batch_size', '-b', type=int, default=128, help='batch size')
+parser.add_argument('--lr', type=float, default=1e-2, help='Adam learning rate')
+parser.add_argument('--gpu_id', type=int, default=0, help='GPU ID to use')
+args = parser.parse_args()
+
+device = torch.device("cuda:{}".format(args.gpu_id) if torch.cuda.is_available() else "cpu")
 
 def main():
-    parser = argparse.ArgumentParser(description='GCN')
-    register_data_args(parser)
-    args = parser.parse_args()
+    if not os.path.exists(args.save_dir):
+        os.makedirs(args.save_dir)
+
     # load and preprocess dataset
     data = load_data(args)
     features = torch.FloatTensor(data.features)
