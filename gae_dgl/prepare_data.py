@@ -1,7 +1,11 @@
 import argparse
+import os
+
+import chainer_chemistry as cc
 import dill
 import pandas as pd
 from dgl import DGLGraph
+import pandas as pd
 import rdkit
 from rdkit import Chem
 import torch
@@ -75,24 +79,27 @@ def smiles2mols(smiles):
     return mols
 
 
-
+# TODO: multiprocessing
+# it takes more than an hour without multiprocessing
+# the data would 
 def main():
-    parser = argparse.ArgumentParser(description='Pretrain SMILES Transformer')
-    parser.add_argument('--save_dir', '-s', type=str, default='data', help='result directry')
-    parser.add_argument('--data_file', '-d', type=str, default='chembl_24.csv', help='data file (.csv)')
-    args = parser.parse_args()
-
+    save_dir = 'data'
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
     print('Loading data')
-    smiles = pd.read_csv(args.save_dir + '/' + args.data_file)['canonical_smiles'].values
+    cc.datasets.zinc.download_and_extract_zinc250k(os.path.join(save_dir, 'zinc250k.csv'))
+    smiles = pd.read_csv(os.path.join(save_dir, 'zinc250k.csv'))['smiles'].values
     print('Transforming SMILES to molecules')
     mols = smiles2mols(smiles)
     del smiles
-    with open(args.save_dir + '/mols.pkl', 'wb') as f:
-        dill.dump(mols, f)
+    print('Saving...')
+    with open(os.path.join(save_dir, 'mols.pkl'), 'wb') as f:
+       dill.dump(mols, f)
     print('Transforming molecules to DGLGraphs')
     graphs = mols2graphs(mols)
     del mols
-    with open(args.save_dir + '/graphs.pkl', 'wb') as f:
+    print('Saving...')
+    with open(os.path.join(save_dir, 'graphs.pkl'), 'wb') as f:
         dill.dump(graphs, f)
     print('{:d} molecules constructed'.format(len(graphs)))
 

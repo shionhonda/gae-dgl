@@ -1,5 +1,6 @@
 import argparse
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -29,9 +30,6 @@ class Trainer:
     def __init__(self, model, args):
         self.model = model
         self.optim = torch.optim.Adam(self.model.parameters(), lr=args.lr)
-        # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # if self.device == 'cuda':
-        #     self.model = nn.DataParallel(self.model, args.gpu_ids)
         print('Total Parameters:', sum([p.nelement() for p in self.model.parameters()]))
 
     def iteration(self, g, train=True):
@@ -48,7 +46,6 @@ class Trainer:
     def save(self, epoch, save_dir):
         output_path = save_dir + '/ep{:02}.pkl'.format(epoch)
         torch.save(self.model.state_dict(), output_path)
-        #self.model.to(self.device)
 
 def plot(train_losses, val_losses):
     plt.plot(train_losses, label='train')
@@ -74,11 +71,11 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    model = GAE(args.in_dim, [32,16])
+    model = GAE(args.in_dim, args.hidden_dims)
     print('Loading data')
     with open(args.data_file, 'rb') as f:
         graphs = dill.load(f)
-    print(len(graphs))
+    print('Loaded {} molecules'.format(len(graphs)))
     train_graphs, val_graphs = train_test_split(graphs, test_size=10000)
     train_dataset = ChemblDataset(train_graphs)
     val_dataset = ChemblDataset(val_graphs)

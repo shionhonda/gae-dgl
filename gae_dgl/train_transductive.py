@@ -1,14 +1,14 @@
 import argparse
-import matplotlib.pyplot as plt
 
-from tqdm import tqdm
+import dgl
+from dgl.data import register_data_args, load_data
+from dgl import DGLGraph
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-import dgl
-from dgl.data import register_data_args, load_data
-from dgl import DGLGraph
+from tqdm import tqdm
 
 from gae import GAE
 
@@ -25,13 +25,18 @@ def main():
     in_feats = features.shape[1]
     
     model = GAE(in_feats, [32,16])
+    model.train()
     optim = torch.optim.Adam(model.parameters(), lr=1e-2)
     
+    g = DGLGraph(data.graph)
+    g.ndata['h']
+
+
     n_epochs = 500
     losses = []
     print('Training Start')
     for epoch in tqdm(range(n_epochs)):
-        g = DGLGraph(data.graph)
+        
         # normalization
         degs = g.in_degrees().float()
         norm = torch.pow(degs, -0.5)
@@ -39,7 +44,8 @@ def main():
         g.ndata['norm'] = norm.unsqueeze(1)
         adj = g.adjacency_matrix().to_dense()
         pos_weight = torch.Tensor([float(adj.shape[0] * adj.shape[0] - adj.sum()) / adj.sum()])
-        model.train()
+        
+        
         adj_logits = model.forward(g, features)
         print(torch.sigmoid(adj_logits))
         loss = loss_function(adj_logits, adj, pos_weight=pos_weight)

@@ -1,14 +1,14 @@
 # GAE-DGL
-Graph Autoencoder[1] implemented with DGL by Shion Honda.  
+Graph Auto-encoder [1] implemented with DGL by Shion Honda.  
 Official implementation by the authors is [here](https://github.com/tkipf/gae) (TensorFlow, Python 2.7).
 
 ## Installation
 ### Prerequisites
-You need PyTorch and DGL at least and the rest to try inductive settings.
+You need PyTorch and DGL at least and the rest to try inductive settings with molecular graphs.
 
 ```
 PyTorch
-Deep Graph Library
+DeepGraphLibrary
 RDKit
 dill
 tqdm
@@ -16,7 +16,7 @@ tqdm
 
 ## Usage
 ### Transductive tasks
-You can reproduce the results of the paper by the following command.
+Reproduce the results of the paper [1] by the following command.
 
 ```
 $ python train_transductive.py --dataset cora
@@ -33,9 +33,9 @@ $ python train_inductive.py
 ```
 
 The ChEMBL dataset can be obtained [here](https://chembl.gitbook.io/chembl-interface-documentation/downloads).  
-Interestingly, though it was not tested in the original paper [1], I found GAE also works in inductive settings.
+Interestingly, I found GAE also works in inductive settings even though it was not tested in the original paper [1].
 
 ![](2019-06-06-10-39-26.png)
 
 ## References
-[1] Thomas N. Kipf and Max Welling, "[Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)", NIPS, 2016.
+[1] Thomas N. Kipf and Max Welling. "[Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)." NIPS. 2016.

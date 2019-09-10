@@ -1,9 +1,9 @@
-from tqdm import tqdm
+import dgl
+import optuna
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-import dgl
-import optuna
+from tqdm import tqdm
 
 from dataset import ChemblDataset
 from gae import GAE

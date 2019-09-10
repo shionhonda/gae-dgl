@@ -1,8 +1,8 @@
+import dgl.function as fn
+from dgl.nn.pytorch import GraphConv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import dgl.function as fn
-from dgl.nn.pytorch import GraphConv
 
 class NodeApplyModule(nn.Module):
     def __init__(self, in_feats, out_feats, activation):
