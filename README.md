@@ -37,6 +37,7 @@ Interestingly, I found GAE also works in inductive settings even though it was n
 
 ![](zinc250k.png)
 
+## Potential Application to Chemistry
 Is learned feature useful for predicting molecular properties? Let's check with simple examples. Here I use ESOL (solubility regression) dataset from [2], which can be downloaded [here](http://moleculenet.ai/datasets-1).
 
 |Feature + Model|RMSE|R2|  
