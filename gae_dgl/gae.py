@@ -30,11 +30,12 @@ class GCN(nn.Module):
         h =  g.ndata.pop('h')
         return h
 
+
 class GAE(nn.Module):
     def __init__(self, in_dim, hidden_dims):
         super(GAE, self).__init__()
         layers = [GCN(in_dim, hidden_dims[0], F.relu)]
-        if len(hidden_dims)>=2:
+        if len(hidden_dims) >= 2:
             layers = [GCN(in_dim, hidden_dims[0], F.relu)]
             for i in range(1,len(hidden_dims)):
                 if i != len(hidden_dims)-1:
