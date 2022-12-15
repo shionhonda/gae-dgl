@@ -1,10 +1,13 @@
 
-### User-defined ignore
+### User-defined ignores
 gae_dgl/data/*
 result/*
 data
 data/
 data/*
+ds
+ds/
+ds/*
 
 ### CVS template
 /CVS/*
