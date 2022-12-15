@@ -32,6 +32,10 @@ PSCDB_CLEANED_TRAIN: final = os.path.join(PSCDB_CLEANED, "train")
 PSCDB_CLEANED_VAL: final = os.path.join(PSCDB_CLEANED, "validation")
 PSCDB_CLEANED_TEST: final = os.path.join(PSCDB_CLEANED, "test")
 
+PARAMS_DIR_SUFFIX: final = "params"
+PARAMS_CSV_SUFFIX: final = "param_df.csv"
+PARAMS_JSON_SUFFIX: final = "params.json"
+
 
 # Randomness-related constants
 RANDOM_SEED: final = 42
