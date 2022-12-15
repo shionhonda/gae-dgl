@@ -255,7 +255,6 @@ def load_dataset(path: str, dataset_type: str = "pscdb") -> Union[InMemoryProtei
     :return: the ProteinGraphDataset or InMemoryProteinGraphDataset object corresponding to the dataset.
     """
 
-    # TODO: fix this function, it doesn't work currently because of a weird PyTorch Geometric error
     if dataset_type not in DATASET_TYPES:
         raise ValueError(f"Invalid dataset type '{dataset_type}', it must be one of: {DATASET_TYPES}")
 

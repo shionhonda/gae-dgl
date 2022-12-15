@@ -24,13 +24,13 @@ def main():
         store_params=True
     )
 
-    # Create data loader to test if everything's ok
+    # Create data loader to check if everything's ok
     dl = DataLoader(ds, batch_size=2, shuffle=True, drop_last=True)
     for el in dl:
         print(el)
         break
 
-    # This doesn't work
+    # Load the dataset and create the data loader to check if everything's ok
     ds2 = load_dataset(PRETRAIN_CLEANED_TRAIN, dataset_type="pretrain")
     # ds2 = load_dataset(PSCDB_CLEANED_TRAIN, dataset_type="pscdb")
     dl = DataLoader(ds2, batch_size=2, shuffle=True, drop_last=True)
