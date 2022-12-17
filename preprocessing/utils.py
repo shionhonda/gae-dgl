@@ -1,6 +1,10 @@
 import json
+import os
+from typing import Union, List
+
 import pandas as pd
-from preprocessing.constants import UNIPROTS_KEY, PDBS_KEY, USED_COLUMNS, RANDOM_SEED, TEST_SIZE_PSCDB, VAL_SIZE_PSCDB
+from preprocessing.constants import UNIPROTS_KEY, PDBS_KEY, USED_COLUMNS, RANDOM_SEED, TEST_SIZE_PSCDB, VAL_SIZE_PSCDB, \
+    PDB
 from sklearn.model_selection import train_test_split
 
 
@@ -36,13 +40,30 @@ def pscdb_read(path: str):
     return df
 
 
-def train_test_validation_split(df: pd.DataFrame, val_size: float = VAL_SIZE_PSCDB, test_size: float = TEST_SIZE_PSCDB,
-                                random_seed: int = RANDOM_SEED) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+def get_pdb_paths_pscdb(pscdb: pd.DataFrame, root_path: str) -> List[str]:
+    """
+    Given a PSCDB dataframe and a root path, return a list of paths to the PDB files.
+
+    :param pscdb: the dataframe containing the PSCDB data
+    :type pscdb: pd.DataFrame
+    :param root_path: the path to the directory containing the PDB files
+    :type root_path: str
+    :return: A list of paths to the PDB files.
+    """
+    pdb_paths = pscdb[PDB].to_list()
+    for i in range(0, len(pdb_paths)):
+        pdb_paths[i] = os.path.join(root_path, pdb_paths[i] + ".pdb")
+    return pdb_paths
+
+
+def train_test_validation_split(dataset: Union[pd.DataFrame, List[str]], val_size: float = VAL_SIZE_PSCDB,
+                                test_size: float = TEST_SIZE_PSCDB, random_seed: int = RANDOM_SEED) -> \
+        (Union[pd.DataFrame, List[str]], Union[pd.DataFrame, List[str]], Union[pd.DataFrame, List[str]]):
     """
    Splits a dataframe into train, validation and test sets.
 
-   :param df: the dataframe to split
-   :type df: pd.DataFrame
+   :param dataset: the dataframe to split
+   :type dataset: pd.DataFrame
    :param val_size: the ratio of the validation set to the entire dataset
    :type val_size: float
    :param test_size: the ratio of the test set to the entire dataset
@@ -51,7 +72,16 @@ def train_test_validation_split(df: pd.DataFrame, val_size: float = VAL_SIZE_PSC
    :type random_seed: int
    :return: A tuple of three dataframes.
    """
+
+    if type(dataset) == list:
+        df = pd.DataFrame(dataset)
+    else:
+        df = dataset
+
     df_train, df_val = train_test_split(df, test_size=val_size, random_state=random_seed)
     df_train, df_test = train_test_split(df_train, test_size=val_size / (1 - test_size), random_state=random_seed)
 
-    return df_train, df_val, df_test
+    if type(dataset) == list:
+        return df_train[0].to_list(), df_val[0].to_list(), df_test[0].to_list()
+    else:
+        return df_train, df_val, df_test

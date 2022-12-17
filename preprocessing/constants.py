@@ -31,6 +31,7 @@ PSCDB_CLEANED: final = os.path.join(CLEANED_DATA, "pscdb")
 PSCDB_CLEANED_TRAIN: final = os.path.join(PSCDB_CLEANED, "train")
 PSCDB_CLEANED_VAL: final = os.path.join(PSCDB_CLEANED, "validation")
 PSCDB_CLEANED_TEST: final = os.path.join(PSCDB_CLEANED, "test")
+PSCDB_PDBS_SUFFIX: final = "raw"
 
 PARAMS_DIR_SUFFIX: final = "params"
 PARAMS_CSV_SUFFIX: final = "param_df.csv"
@@ -44,3 +45,5 @@ RANDOM_SEED: final = 42
 # Split-related constants
 VAL_SIZE_PSCDB: final = 0.15
 TEST_SIZE_PSCDB: final = 0.15
+VAL_SIZE_PRETRAIN: final = 0.20
+TEST_SIZE_PRETRAIN: final = 0.20
