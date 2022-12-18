@@ -37,22 +37,23 @@ def __load_params(path: str) -> dict[str, Any]:
     :param path: str
     :type path: str
     :return: A dictionary of parameters.
-    """
-    # Read param dataframe from csv
-    df = pd.read_csv(os.path.join(path, PARAMS_CSV_SUFFIX))
-
+    """ 
     # Read other parameters from json file
     with open(os.path.join(path, PARAMS_JSON_SUFFIX), "r") as fp:
         params = json.load(fp)
 
-    # Handle additional parameter for dataframe
-    df_param_name = params[__DATAFRAME_PARAM_NAME]  # read parameter name
-    del params[__DATAFRAME_PARAM_NAME]  # delete parameter name from parameter list
-    params[df_param_name] = df  # add dataframe parameter corresponding to df_param_name
+    if "df_param_name" in params:    
+        # Read param dataframe from csv
+        df = pd.read_csv(os.path.join(path, PARAMS_CSV_SUFFIX))
+
+        # Handle additional parameter for dataframe
+        df_param_name = params[__DATAFRAME_PARAM_NAME]  # read parameter name
+        del params[__DATAFRAME_PARAM_NAME]  # delete parameter name from parameter list
+        params[df_param_name] = df  # add dataframe parameter corresponding to df_param_name
     return params
 
 
-def __store_params(path: str, df: pd.DataFrame, df_param_name: str, **kwargs):
+def __store_params(path: str, **kwargs):
     """
     It stores the given dataframe as a csv file and the given parameters as a json file
 
@@ -63,19 +64,37 @@ def __store_params(path: str, df: pd.DataFrame, df_param_name: str, **kwargs):
     :param df_param_name: The name of the parameter that contains the dataframe
     :type df_param_name: str
     """
-    # Store given dataframe as csv
-    df.to_csv(os.path.join(path, PARAMS_CSV_SUFFIX))
+    # Store given dataframe as csv 
+    params: dict = kwargs
+    if "df" in params:
+        df = params["df"]
+        df_param_name = params["df_param_name"]
+        df.to_csv(os.path.join(path, PARAMS_CSV_SUFFIX))
+        # additional parameter for dataframe parameter name
+        params.update({__DATAFRAME_PARAM_NAME: df_param_name})
 
     # Store other params as json
-    params: dict = kwargs
-    params.update({__DATAFRAME_PARAM_NAME: df_param_name})  # additional parameter for dataframe parameter name
     with open(os.path.join(path, PARAMS_JSON_SUFFIX), "w") as fp:
         json.dump(params, fp)
 
+# MAYBE NOT REQUIRED
+'''
+def _get_pdb_codes_from_paths(pdb_paths:list) -> list:
+    pdb_codes = []
+    if pdb_paths != []:
+        for path in pdb_paths:
+            # extracting pdb code from the path string
+            start_indx = path.find("-") + 1
+            end_indx   = start_indx + 6
+            code       = path[start_indx:end_indx]
+            pdb_codes.append(code)
+    return pdb_codes
+'''
+
 
 def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = False, graph_format: str = "pyg",
-                         conversion_verbosity: str = "gnn", store_params: bool = False) -> \
-        Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
+                        conversion_verbosity: str = "gnn", store_params: bool = False, PDBs_path = []) -> \
+                        Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
 
     """
     It takes a dataframe, extracts the PDB codes and the labels, creates a graphein config, a graph format converter and
@@ -103,7 +122,7 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
 
     if conversion_verbosity not in VERBOSITIES_CONVERSION:
         raise ValueError(f"Invalid conversion verbosity: {conversion_verbosity}, it needs to be one of the following: "
-                         f"{str(VERBOSITIES_CONVERSION)}")
+                        f"{str(VERBOSITIES_CONVERSION)}")
 
     # Extract label
     one_hot_encode = LabelBinarizer().fit_transform(df[MOTION_TYPE])  # one hot encode labels
@@ -159,9 +178,8 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
     return ds
 
 
-def create_dataset_pretrain(pscdb: pd.DataFrame, export_path: str, uniprot_ids: Optional[List[str]] = None,
-                            pdb_codes: Optional[List[str]] = None, in_memory: bool = False, graph_format: str = "pyg",
-                            conversion_verbosity: str = "gnn", store_params: bool = False) -> \
+def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: bool = False, graph_format: str = "pyg",
+                        conversion_verbosity: str = "gnn", store_params: bool = False) -> \
         Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
     """
     Takes PSCDB dataset, a list of PDB codes and a list of uniprot ids, and creates a dataset of protein graphs.
@@ -193,13 +211,15 @@ def create_dataset_pretrain(pscdb: pd.DataFrame, export_path: str, uniprot_ids: 
 
     if conversion_verbosity not in VERBOSITIES_CONVERSION:
         raise ValueError(f"Invalid conversion verbosity: {conversion_verbosity}, it needs to be one of the following: "
-                         f"{str(VERBOSITIES_CONVERSION)}")
+                        f"{str(VERBOSITIES_CONVERSION)}")
+    '''
     # Extract PDBs
     if pdb_codes is not None:
         pdbs = pdb_codes
     else:
         pdbs = []
     pdbs = pdbs + pscdb[PDB].to_list()
+    '''
 
     # Define graphein config
     config = {
@@ -213,18 +233,16 @@ def create_dataset_pretrain(pscdb: pd.DataFrame, export_path: str, uniprot_ids: 
     # Create dataset
     if in_memory:
         ds = InMemoryProteinGraphDataset(
+            pdb_paths=pdb_paths,
             root=export_path,
             name=DATASET_NAME_PRETRAINED,
-            pdb_codes=pdbs,
-            uniprot_ids=uniprot_ids,
             graphein_config=config,
             graph_format_convertor=converter
         )
     else:
         ds = ProteinGraphDataset(
+            pdb_paths=pdb_paths,
             root=export_path,
-            pdb_codes=pdbs,
-            uniprot_ids=uniprot_ids,
             graphein_config=config,
             graph_format_convertor=converter
         )
@@ -233,10 +251,7 @@ def create_dataset_pretrain(pscdb: pd.DataFrame, export_path: str, uniprot_ids: 
     if store_params:
         __store_params(
             path=os.path.join(export_path, PARAMS_DIR_SUFFIX),
-            df=pscdb,
-            df_param_name="pscdb",
-            uniprot_ids=uniprot_ids,
-            pdb_codes=pdb_codes,
+            pdb_paths = pdb_paths,
             graph_format=graph_format,
             conversion_verbosity=conversion_verbosity,
             in_memory=in_memory

@@ -4,11 +4,11 @@ from typing import Union, List
 
 import pandas as pd
 from preprocessing.constants import UNIPROTS_KEY, PDBS_KEY, USED_COLUMNS, RANDOM_SEED, TEST_SIZE_PSCDB, VAL_SIZE_PSCDB, \
-    PDB
+    PDB, PATHs_KEY
 from sklearn.model_selection import train_test_split
 
 
-def get_uniprot_IDs_and_pdb_codes(path: str) -> (list[str], list[str]):
+def get_uniprot_IDs_and_pdb_codes(path: str) -> tuple[list[str], list[str]]:
     """
     This function takes in a path to a JSON file containing the UniProt IDs and PDB codes, reading them from the JSON
     file and returning them.
@@ -19,10 +19,11 @@ def get_uniprot_IDs_and_pdb_codes(path: str) -> (list[str], list[str]):
     """
 
     with open(path, "r") as fp:
-        data = json.load(fp)
+        data       = json.load(fp)
         uniprotIDs = data[UNIPROTS_KEY]
-        pdbIDs = data[PDBS_KEY]
-        return uniprotIDs, pdbIDs
+        pdbIDs     = data[PDBS_KEY]
+        paths      = data[PATHs_KEY]
+        return uniprotIDs, pdbIDs, paths
 
 
 def pscdb_read(path: str):
@@ -58,20 +59,20 @@ def get_pdb_paths_pscdb(pscdb: pd.DataFrame, root_path: str) -> List[str]:
 
 def train_test_validation_split(dataset: Union[pd.DataFrame, List[str]], val_size: float = VAL_SIZE_PSCDB,
                                 test_size: float = TEST_SIZE_PSCDB, random_seed: int = RANDOM_SEED) -> \
-        (Union[pd.DataFrame, List[str]], Union[pd.DataFrame, List[str]], Union[pd.DataFrame, List[str]]):
+        tuple[Union[pd.DataFrame, List[str]], Union[pd.DataFrame, List[str]], Union[pd.DataFrame, List[str]]]:
     """
-   Splits a dataframe into train, validation and test sets.
+    Splits a dataframe into train, validation and test sets.
 
-   :param dataset: the dataframe to split
-   :type dataset: pd.DataFrame
-   :param val_size: the ratio of the validation set to the entire dataset
-   :type val_size: float
-   :param test_size: the ratio of the test set to the entire dataset
-   :type test_size: float
-   :param random_seed: The random seed to use for the split
-   :type random_seed: int
-   :return: A tuple of three dataframes.
-   """
+    :param dataset: the dataframe to split
+    :type dataset: pd.DataFrame
+    :param val_size: the ratio of the validation set to the entire dataset
+    :type val_size: float
+    :param test_size: the ratio of the test set to the entire dataset
+    :type test_size: float
+    :param random_seed: The random seed to use for the split
+    :type random_seed: int
+    :return: A tuple of three dataframes.
+    """
 
     if type(dataset) == list:
         df = pd.DataFrame(dataset)
