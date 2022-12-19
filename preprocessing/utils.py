@@ -1,14 +1,13 @@
 import json
 import os
 from typing import Union, List
-
 import pandas as pd
 from preprocessing.constants import UNIPROTS_KEY, PDBS_KEY, USED_COLUMNS, RANDOM_SEED, TEST_SIZE_PSCDB, VAL_SIZE_PSCDB, \
-    PDB, PATHs_KEY
+    PDB, PATHS_KEY
 from sklearn.model_selection import train_test_split
 
 
-def get_uniprot_IDs_and_pdb_codes(path: str) -> tuple[list[str], list[str]]:
+def get_uniprot_IDs_and_pdb_codes(path: str) -> tuple[list[str], list[str], list[str]]:
     """
     This function takes in a path to a JSON file containing the UniProt IDs and PDB codes, reading them from the JSON
     file and returning them.
@@ -19,10 +18,10 @@ def get_uniprot_IDs_and_pdb_codes(path: str) -> tuple[list[str], list[str]]:
     """
 
     with open(path, "r") as fp:
-        data       = json.load(fp)
+        data = json.load(fp)
         uniprotIDs = data[UNIPROTS_KEY]
-        pdbIDs     = data[PDBS_KEY]
-        paths      = data[PATHs_KEY]
+        pdbIDs = data[PDBS_KEY]
+        paths = data[PATHS_KEY]
         return uniprotIDs, pdbIDs, paths
 
 

@@ -12,7 +12,6 @@ from graphein.ml import InMemoryProteinGraphDataset, GraphFormatConvertor, Prote
 import graphein.ml.conversion as gmlc
 from typing import final, Union, Optional, List, Any
 
-
 # Globally-visible constants
 EDGE_CONSTRUCTION_FUNCTIONS: final = frozenset([
     partial(add_k_nn_edges, k=3, long_interaction_threshold=0),
@@ -37,12 +36,12 @@ def __load_params(path: str) -> dict[str, Any]:
     :param path: str
     :type path: str
     :return: A dictionary of parameters.
-    """ 
+    """
     # Read other parameters from json file
     with open(os.path.join(path, PARAMS_JSON_SUFFIX), "r") as fp:
         params = json.load(fp)
 
-    if "df_param_name" in params:    
+    if "df_param_name" in params:
         # Read param dataframe from csv
         df = pd.read_csv(os.path.join(path, PARAMS_CSV_SUFFIX))
 
@@ -61,13 +60,14 @@ def __store_params(path: str, **kwargs):
     :type path: str
     :param df: the dataframe to store
     :type df: pd.DataFrame
-    :param df_param_name: The name of the parameter that contains the dataframe
+    :param df_param_name: The name of the param eter that contains the dataframe
     :type df_param_name: str
     """
     # Store given dataframe as csv 
     params: dict = kwargs
     if "df" in params:
         df = params["df"]
+        del params["df"]
         df_param_name = params["df_param_name"]
         df.to_csv(os.path.join(path, PARAMS_CSV_SUFFIX))
         # additional parameter for dataframe parameter name
@@ -76,6 +76,7 @@ def __store_params(path: str, **kwargs):
     # Store other params as json
     with open(os.path.join(path, PARAMS_JSON_SUFFIX), "w") as fp:
         json.dump(params, fp)
+
 
 # MAYBE NOT REQUIRED
 '''
@@ -89,13 +90,14 @@ def _get_pdb_codes_from_paths(pdb_paths:list) -> list:
             code       = path[start_indx:end_indx]
             pdb_codes.append(code)
     return pdb_codes
+    
+    "data/alphafold/pdbs/AF-B4DHS0-F1-model_v4.pdb",
 '''
 
 
 def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = False, graph_format: str = "pyg",
-                        conversion_verbosity: str = "gnn", store_params: bool = False, PDBs_path = []) -> \
-                        Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
-
+                         conversion_verbosity: str = "gnn", store_params: bool = False) -> \
+        Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
     """
     It takes a dataframe, extracts the PDB codes and the labels, creates a graphein config, a graph format converter and
     a dataset object.
@@ -122,7 +124,7 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
 
     if conversion_verbosity not in VERBOSITIES_CONVERSION:
         raise ValueError(f"Invalid conversion verbosity: {conversion_verbosity}, it needs to be one of the following: "
-                        f"{str(VERBOSITIES_CONVERSION)}")
+                         f"{str(VERBOSITIES_CONVERSION)}")
 
     # Extract label
     one_hot_encode = LabelBinarizer().fit_transform(df[MOTION_TYPE])  # one hot encode labels
@@ -179,31 +181,25 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
 
 
 def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: bool = False, graph_format: str = "pyg",
-                        conversion_verbosity: str = "gnn", store_params: bool = False) -> \
+                            conversion_verbosity: str = "gnn", store_params: bool = False) -> \
         Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
     """
-    Takes PSCDB dataset, a list of PDB codes and a list of uniprot ids, and creates a dataset of protein graphs.
+        This function takes in a list of pdb files, and returns a dataset of graphs
 
-    :param pscdb: The PSCDB dataframe
-    :type pscdb: pd.DataFrame
-    :param export_path: The path to the directory where the dataset will be stored
-    :type export_path: str
-    :param uniprot_ids: List of UniProt IDs to be included in the dataset. If None, all UniProt IDs in the PSCDB will be
-    included
-    :type uniprot_ids: Optional[List[str]]
-    :param pdb_codes: List of PDB codes to be included in the dataset. If None, all PDB codes in the PSCDB will be
-        included.
-    :type pdb_codes: Optional[List[str]]
-    :param in_memory: If True, the dataset will be stored in memory. If False, it will be stored on disk, defaults to
-        False.
-    :type in_memory: bool (optional)
-    :param graph_format: str = "pyg", defaults to pyg
-    :type graph_format: str (optional)
-    :param conversion_verbosity: str = "gnn",, defaults to gnn
-    :type conversion_verbosity: str (optional)
-    :param store_params: bool = False, defaults to False
-    :type store_params: bool (optional)
-    :return: A dataset object
+        :param pdb_paths: List[str]
+        :type pdb_paths: List[str]
+        :param export_path: The path to the directory where the dataset will be stored
+        :type export_path: str
+        :param in_memory: If True, the dataset will be loaded in memory. If False, the dataset will be loaded on disk,
+            defaults to False
+        :type in_memory: bool (optional)
+        :param graph_format: The format of the graph. Can be one of the following:, defaults to pyg
+        :type graph_format: str (optional)
+        :param conversion_verbosity: str = "gnn", store_params: bool = False, defaults to gnn
+        :type conversion_verbosity: str (optional)
+        :param store_params: bool = False, defaults to False
+        :type store_params: bool (optional)
+        :return: A dataset object
     """
 
     if graph_format not in FORMATS:
@@ -211,7 +207,7 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
 
     if conversion_verbosity not in VERBOSITIES_CONVERSION:
         raise ValueError(f"Invalid conversion verbosity: {conversion_verbosity}, it needs to be one of the following: "
-                        f"{str(VERBOSITIES_CONVERSION)}")
+                         f"{str(VERBOSITIES_CONVERSION)}")
     '''
     # Extract PDBs
     if pdb_codes is not None:
@@ -251,7 +247,7 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
     if store_params:
         __store_params(
             path=os.path.join(export_path, PARAMS_DIR_SUFFIX),
-            pdb_paths = pdb_paths,
+            pdb_paths=pdb_paths,
             graph_format=graph_format,
             conversion_verbosity=conversion_verbosity,
             in_memory=in_memory
