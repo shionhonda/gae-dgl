@@ -36,7 +36,6 @@ def main():
     )
 
     # Get the PDB paths of the PSCDB train/validation/test proteins
-    # TODO: modify PSCDS paths to be in the same folder with the alphafold pdbs
     '''
     pscdb_pdb_paths_train = get_pdb_paths_pscdb(df_train, os.path.join(PSCDB_CLEANED_TRAIN, PSCDB_PDBS_SUFFIX))
     pscdb_pdb_paths_val = get_pdb_paths_pscdb(df_val, os.path.join(PSCDB_CLEANED_VAL, PSCDB_PDBS_SUFFIX))
