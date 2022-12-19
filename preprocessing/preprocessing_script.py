@@ -16,7 +16,6 @@ def main():
     df = pscdb_read(PSCDB_PATH)
     df2 = df.iloc[0:10]
 
-    # TODO: get pdb paths from json
     uniprots, pdbs, pdb_paths = get_uniprot_IDs_and_pdb_codes(PATH_PDBS_JSON)
 
     # Perform train/validation/test split on PSCDB
