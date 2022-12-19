@@ -9,8 +9,10 @@ DATA_PATH: final = "data"
 # Additional PDBs from AlphaFold-related constants
 UNIPROTS_KEY: final = "uniprotIDs"
 PDBS_KEY: final = "pdbIDs"
-PATHs_KEY: final = "paths" 
-PATH_PDBS_JSON: final = os.path.join(DATA_PATH, "alphafold", "pdbs.json")
+PATHS_KEY: final = "pdbPaths"
+PATH_ALPHAFOLD: final = os.path.join(DATA_PATH, "alphafold")
+PATH_PDBS_JSON: final = os.path.join(PATH_ALPHAFOLD, "pdbs.json")
+PATH_PDBS_DIR: final = os.path.join(PATH_ALPHAFOLD, "pdbs")
 
 
 # PSCDB-related constants
