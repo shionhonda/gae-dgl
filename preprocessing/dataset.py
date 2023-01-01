@@ -133,14 +133,17 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
         for i in range(0, len(pdbs)):
             graph_label_map[pdbs[i]] = y[i]
 
-    # Define graphein config
+    # Define graphein config, starting with the edge construction functions
     config = {
         "edge_construction_functions": list(EDGE_CONSTRUCTION_FUNCTIONS)
     }
+
+    # Handle additional node features like Meiler's embeddings and amino-acid one-hot encoding, updating the config dict
     if len(NODE_METADATA_FUNCTIONS) > 0:
         config.update({"node_metadata_functions": list(NODE_METADATA_FUNCTIONS.values())})
     config = ProteinGraphConfig(**config)
 
+    # Adding additional node features to the columns the graph format converter needs to store
     columns = list(NODE_METADATA_FUNCTIONS.keys())
     if conversion_verbosity == "gnn":
         columns.extend([
@@ -262,12 +265,60 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
     config = {
         "edge_construction_functions": list(EDGE_CONSTRUCTION_FUNCTIONS)
     }
+
+    # Handle additional node features like Meiler's embeddings and amino-acid one-hot encoding, updating the config dict
     if len(NODE_METADATA_FUNCTIONS) > 0:
-        config.update({"node_metadata_functions": list(NODE_METADATA_FUNCTIONS)})
+        config.update({"node_metadata_functions": list(NODE_METADATA_FUNCTIONS.values())})
     config = ProteinGraphConfig(**config)
 
+    # Adding additional node features to the columns the graph format converter needs to store
+    columns = list(NODE_METADATA_FUNCTIONS.keys())
+    if conversion_verbosity == "gnn":
+        columns.extend([
+            "edge_index",
+            "coords",
+            "dist_mat",
+            "name",
+            "node_id",
+        ])
+    elif conversion_verbosity == "default":
+        columns.extend([
+            "b_factor",
+            "chain_id",
+            "coords",
+            "dist_mat",
+            "edge_index",
+            "kind",
+            "name",
+            "node_id",
+            "residue_name",
+        ])
+    elif conversion_verbosity == "all_info":
+        columns.extend([
+            "atom_type",
+            "b_factor",
+            "chain_id",
+            "chain_ids",
+            "config",
+            "coords",
+            "dist_mat",
+            "edge_index",
+            "element_symbol",
+            "kind",
+            "name",
+            "node_id",
+            "node_type",
+            "pdb_df",
+            "raw_pdb_df",
+            "residue_name",
+            "residue_number",
+            "rgroup_df",
+            "sequence_A",
+            "sequence_B",
+        ])
+
     # Format converter
-    converter = GraphFormatConvertor(src_format="nx", dst_format=graph_format, verbose=conversion_verbosity)
+    converter = GraphFormatConvertor(src_format="nx", dst_format=graph_format, columns=columns)
 
     # Create dataset
     if in_memory:
