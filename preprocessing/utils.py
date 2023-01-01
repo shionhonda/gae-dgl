@@ -1,3 +1,4 @@
+import collections
 import json
 import os
 from typing import Union, List
@@ -85,3 +86,50 @@ def train_test_validation_split(dataset: Union[pd.DataFrame, List[str]], val_siz
         return df_train[0].to_list(), df_val[0].to_list(), df_test[0].to_list()
     else:
         return df_train, df_val, df_test
+
+
+class FrozenDict(collections.Mapping):
+    """
+    Simple class representing a dictionary that cannot be changed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Constructs a new frozen dictionary from the given arguments.
+        """
+        self._d = dict(*args, **kwargs)
+        self._hash = None
+
+    def __str__(self):
+        return str(self._d)
+
+    def __iter__(self):
+        return iter(self._d)
+
+    def __len__(self):
+        return len(self._d)
+
+    def __getitem__(self, key):
+        return self._d[key]
+
+    def keys(self):
+        return self._d.keys()
+
+    def values(self):
+        return self._d.values()
+
+    def items(self):
+        return self._d.items()
+
+    def __hash__(self):
+        # It would have been simpler and maybe more obvious to
+        # use hash(tuple(sorted(self._d.iteritems()))) from this discussion
+        # so far, but this solution is O(n). I don't know what kind of
+        # n we are going to run into, but sometimes it's hard to resist the
+        # urge to optimize when it will gain improved algorithmic performance.
+        if self._hash is None:
+            hash_ = 0
+            for pair in self.items():
+                hash_ ^= hash(pair)
+            self._hash = hash_
+        return self._hash

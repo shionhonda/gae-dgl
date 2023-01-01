@@ -8,9 +8,13 @@ from preprocessing.constants import MOTION_TYPE, PDB, PARAMS_DIR_SUFFIX, PARAMS_
 from functools import partial
 from graphein.protein.edges.distance import add_hydrogen_bond_interactions, add_peptide_bonds, add_k_nn_edges, \
     add_ionic_interactions
+from graphein.protein.features.nodes import amino_acid_one_hot, meiler_embedding, hydrogen_bond_donor, \
+    expasy_protein_scale, hydrogen_bond_acceptor
 from graphein.ml import InMemoryProteinGraphDataset, GraphFormatConvertor, ProteinGraphDataset
 import graphein.ml.conversion as gmlc
 from typing import final, Union, Optional, List, Any
+from preprocessing.utils import FrozenDict
+
 
 # Globally-visible constants
 EDGE_CONSTRUCTION_FUNCTIONS: final = frozenset([
@@ -19,6 +23,13 @@ EDGE_CONSTRUCTION_FUNCTIONS: final = frozenset([
     add_peptide_bonds,
     # add_ionic_interactions
 ])
+NODE_METADATA_FUNCTIONS: final = FrozenDict({
+    # "amino_acid_one_hot": amino_acid_one_hot,
+    "meiler": meiler_embedding,
+    # "hbond_donors": hydrogen_bond_donor,
+    # "hbond_acceptors": hydrogen_bond_acceptor,
+    # "expasy": expasy_protein_scale
+})
 DATASET_NAME_PSCDB: final = "pscdb_cleaned"
 DATASET_NAME_PRETRAINED: final = "pretrain_cleaned"
 FORMATS: final = frozenset(["pyg", "dgl"])
@@ -78,23 +89,6 @@ def __store_params(path: str, **kwargs):
         json.dump(params, fp)
 
 
-# MAYBE NOT REQUIRED
-'''
-def _get_pdb_codes_from_paths(pdb_paths:list) -> list:
-    pdb_codes = []
-    if pdb_paths != []:
-        for path in pdb_paths:
-            # extracting pdb code from the path string
-            start_indx = path.find("-") + 1
-            end_indx   = start_indx + 6
-            code       = path[start_indx:end_indx]
-            pdb_codes.append(code)
-    return pdb_codes
-    
-    "data/alphafold/pdbs/AF-B4DHS0-F1-model_v4.pdb",
-'''
-
-
 def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = False, graph_format: str = "pyg",
                          conversion_verbosity: str = "gnn", store_params: bool = False) -> \
         Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
@@ -139,14 +133,64 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
         for i in range(0, len(pdbs)):
             graph_label_map[pdbs[i]] = y[i]
 
-    # Define graphein config
+    # Define graphein config, starting with the edge construction functions
     config = {
         "edge_construction_functions": list(EDGE_CONSTRUCTION_FUNCTIONS)
     }
+
+    # Handle additional node features like Meiler's embeddings and amino-acid one-hot encoding, updating the config dict
+    if len(NODE_METADATA_FUNCTIONS) > 0:
+        config.update({"node_metadata_functions": list(NODE_METADATA_FUNCTIONS.values())})
     config = ProteinGraphConfig(**config)
 
+    # Adding additional node features to the columns the graph format converter needs to store
+    columns = list(NODE_METADATA_FUNCTIONS.keys())
+    if conversion_verbosity == "gnn":
+        columns.extend([
+            "edge_index",
+            "coords",
+            "dist_mat",
+            "name",
+            "node_id",
+        ])
+    elif conversion_verbosity == "default":
+        columns.extend([
+            "b_factor",
+            "chain_id",
+            "coords",
+            "dist_mat",
+            "edge_index",
+            "kind",
+            "name",
+            "node_id",
+            "residue_name",
+        ])
+    elif conversion_verbosity == "all_info":
+        columns.extend([
+            "atom_type",
+            "b_factor",
+            "chain_id",
+            "chain_ids",
+            "config",
+            "coords",
+            "dist_mat",
+            "edge_index",
+            "element_symbol",
+            "kind",
+            "name",
+            "node_id",
+            "node_type",
+            "pdb_df",
+            "raw_pdb_df",
+            "residue_name",
+            "residue_number",
+            "rgroup_df",
+            "sequence_A",
+            "sequence_B",
+        ])
+
     # Format converter
-    converter = GraphFormatConvertor(src_format="nx", dst_format=graph_format, verbose=conversion_verbosity)
+    converter = GraphFormatConvertor(src_format="nx", dst_format=graph_format, columns=columns)
 
     # Create dataset
     if in_memory:
@@ -221,10 +265,60 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
     config = {
         "edge_construction_functions": list(EDGE_CONSTRUCTION_FUNCTIONS)
     }
+
+    # Handle additional node features like Meiler's embeddings and amino-acid one-hot encoding, updating the config dict
+    if len(NODE_METADATA_FUNCTIONS) > 0:
+        config.update({"node_metadata_functions": list(NODE_METADATA_FUNCTIONS.values())})
     config = ProteinGraphConfig(**config)
 
+    # Adding additional node features to the columns the graph format converter needs to store
+    columns = list(NODE_METADATA_FUNCTIONS.keys())
+    if conversion_verbosity == "gnn":
+        columns.extend([
+            "edge_index",
+            "coords",
+            "dist_mat",
+            "name",
+            "node_id",
+        ])
+    elif conversion_verbosity == "default":
+        columns.extend([
+            "b_factor",
+            "chain_id",
+            "coords",
+            "dist_mat",
+            "edge_index",
+            "kind",
+            "name",
+            "node_id",
+            "residue_name",
+        ])
+    elif conversion_verbosity == "all_info":
+        columns.extend([
+            "atom_type",
+            "b_factor",
+            "chain_id",
+            "chain_ids",
+            "config",
+            "coords",
+            "dist_mat",
+            "edge_index",
+            "element_symbol",
+            "kind",
+            "name",
+            "node_id",
+            "node_type",
+            "pdb_df",
+            "raw_pdb_df",
+            "residue_name",
+            "residue_number",
+            "rgroup_df",
+            "sequence_A",
+            "sequence_B",
+        ])
+
     # Format converter
-    converter = GraphFormatConvertor(src_format="nx", dst_format=graph_format, verbose=conversion_verbosity)
+    converter = GraphFormatConvertor(src_format="nx", dst_format=graph_format, columns=columns)
 
     # Create dataset
     if in_memory:
