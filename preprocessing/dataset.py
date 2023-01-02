@@ -390,7 +390,7 @@ class NodeFeatureFormatter(BaseTransform):
         to combine with coords. It converts all the node features into tensors and concat them into a single "x" tensor.
 
         :param feature_columns: a list of strings that represent the names of the additional node features to be used in
-            the model (defatult: None).
+            the model (default: None).
         :type feature_columns: Optional[list[str]]
         """
         super(NodeFeatureFormatter, self).__init__()
