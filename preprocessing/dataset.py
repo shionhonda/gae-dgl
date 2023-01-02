@@ -375,7 +375,6 @@ def load_dataset(path: str, dataset_type: str = "pscdb") -> Union[InMemoryProtei
     return ds
 
 
-# TODO: finish off this transformation function
 class FormatNodeFeatures(object):
     def __init__(self, feature_columns: Optional[list[str]] = None):
         self.__feature_columns = feature_columns if feature_columns is not None else []
