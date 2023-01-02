@@ -38,6 +38,7 @@ DATASET_NAME_PRETRAINED: final = "pretrain_cleaned"
 FORMATS: final = frozenset(["pyg", "dgl"])
 VERBOSITIES_CONVERSION: final = frozenset(gmlc.SUPPORTED_VERBOSITY)
 DATASET_TYPES: final = frozenset(["pscdb", "pretrain"])
+NUM_CORES: final = 4
 
 # Local-only constants
 __DATAFRAME_PARAM_NAME: final = "df_param_name"
@@ -204,7 +205,8 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
             graphein_config=config,
             graph_format_convertor=converter,
             graph_label_map=graph_label_map,
-            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys()))
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
     else:
         ds = ProteinGraphDataset(
@@ -213,7 +215,8 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
             graphein_config=config,
             graph_format_convertor=converter,
             graph_labels=y,
-            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys()))
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
 
     # Store given parameters if required
@@ -333,7 +336,8 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
             name=DATASET_NAME_PRETRAINED,
             graphein_config=config,
             graph_format_convertor=converter,
-            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys()))
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
     else:
         ds = ProteinGraphDataset(
@@ -341,7 +345,8 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
             root=export_path,
             graphein_config=config,
             graph_format_convertor=converter,
-            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys()))
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
 
     # Store given parameters if required
