@@ -15,7 +15,6 @@ import graphein.ml.conversion as gmlc
 from typing import final, Union, Optional, List, Any
 from preprocessing.utils import FrozenDict
 
-
 # Globally-visible constants
 EDGE_CONSTRUCTION_FUNCTIONS: final = frozenset([
     partial(add_k_nn_edges, k=3, long_interaction_threshold=0),
@@ -374,3 +373,41 @@ def load_dataset(path: str, dataset_type: str = "pscdb") -> Union[InMemoryProtei
         ds = create_dataset_pretrain(export_path=path, **params)
 
     return ds
+
+
+# TODO: finish off this transformation function
+class FormatNodeFeatures(object):
+    def __init__(self, feature_columns: Optional[list[str]] = None):
+        self.__feature_columns = feature_columns if feature_columns is not None else []
+
+    @property
+    def feature_columns(self) -> list[str]:
+        return self.__feature_columns
+
+    @feature_columns.setter
+    def feature_columns(self, feature_columns: list[str]):
+        self.__feature_columns = feature_columns
+
+    def __call__(self, sample):
+
+        # Get column keys
+        keys = sample.keys
+
+        # Construct dict containing all the columns
+        columns = {key: sample[key] for key in keys}
+
+        # Convert numpy arrays to tensors for each node feature column, and create combined node feature tensor
+        columns["coords"] = torch.Tensor(columns["coords"][0])
+        columns["x"] = columns["coords"]
+        for feature_col in self.feature_columns:
+            columns[feature_col] = torch.Tensor(columns[feature_col])  # convert to tensor
+            columns["x"] = torch.cat([columns["x"], columns[feature_col]], dim=-1)  # combine node features
+
+        # Add renamed y column if required
+        if "graph_y" in columns:
+            columns["y"] = columns["graph_y"]
+
+        return columns
+
+
+
