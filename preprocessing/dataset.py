@@ -4,7 +4,9 @@ import pandas as pd
 import torch
 from graphein.protein import ProteinGraphConfig
 from sklearn.preprocessing import LabelBinarizer
-from preprocessing.constants import MOTION_TYPE, PDB, PARAMS_DIR_SUFFIX, PARAMS_CSV_SUFFIX, PARAMS_JSON_SUFFIX
+from torch_geometric.data import HeteroData, Data
+from preprocessing.constants import MOTION_TYPE, PDB, PARAMS_DIR_SUFFIX, PARAMS_CSV_SUFFIX, PARAMS_JSON_SUFFIX, \
+    NUM_CORES
 from functools import partial
 from graphein.protein.edges.distance import add_hydrogen_bond_interactions, add_peptide_bonds, add_k_nn_edges, \
     add_ionic_interactions
@@ -14,6 +16,8 @@ from graphein.ml import InMemoryProteinGraphDataset, GraphFormatConvertor, Prote
 import graphein.ml.conversion as gmlc
 from typing import final, Union, Optional, List, Any
 from preprocessing.utils import FrozenDict
+from torch_geometric.transforms import BaseTransform
+
 
 # Globally-visible constants
 EDGE_CONSTRUCTION_FUNCTIONS: final = frozenset([
@@ -199,7 +203,9 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
             pdb_codes=pdbs,
             graphein_config=config,
             graph_format_convertor=converter,
-            graph_label_map=graph_label_map
+            graph_label_map=graph_label_map,
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
     else:
         ds = ProteinGraphDataset(
@@ -207,7 +213,9 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
             pdb_codes=pdbs,
             graphein_config=config,
             graph_format_convertor=converter,
-            graph_labels=y
+            graph_labels=y,
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
 
     # Store given parameters if required
@@ -326,14 +334,18 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
             root=export_path,
             name=DATASET_NAME_PRETRAINED,
             graphein_config=config,
-            graph_format_convertor=converter
+            graph_format_convertor=converter,
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
     else:
         ds = ProteinGraphDataset(
             pdb_paths=pdb_paths,
             root=export_path,
             graphein_config=config,
-            graph_format_convertor=converter
+            graph_format_convertor=converter,
+            transform=NodeFeatureFormatter(list(NODE_METADATA_FUNCTIONS.keys())),
+            num_cores=NUM_CORES
         )
 
     # Store given parameters if required
@@ -375,25 +387,52 @@ def load_dataset(path: str, dataset_type: str = "pscdb") -> Union[InMemoryProtei
     return ds
 
 
-class FormatNodeFeatures(object):
+class NodeFeatureFormatter(BaseTransform):
     def __init__(self, feature_columns: Optional[list[str]] = None):
+        """
+        Represents a transformation to be applied on the node features, optionally given a list of additional features
+        to combine with coords. It converts all the node features into tensors and concat them into a single "x" tensor.
+
+        :param feature_columns: a list of strings that represent the names of the additional node features to be used in
+            the model (default: None).
+        :type feature_columns: Optional[list[str]]
+        """
+        super(NodeFeatureFormatter, self).__init__()
         self.__feature_columns = feature_columns if feature_columns is not None else []
 
     @property
     def feature_columns(self) -> list[str]:
+        """
+        It returns the list of additional node features.
+
+        :return: a list of strings representing the additional node features.
+        """
         return self.__feature_columns
 
     @feature_columns.setter
     def feature_columns(self, feature_columns: list[str]):
+        """
+        Sets the names of the additional node features.
+
+        :param feature_columns: the names of the additional node features.
+        :type feature_columns: list[str]
+        """
         self.__feature_columns = feature_columns
 
-    def __call__(self, sample):
+    def __call__(self, sample: Union[Data, HeteroData]):
+        """
+        It takes a sample from the dataset, and converts the numpy arrays to tensors, and combines the node features
+        into a single "x" tensor.
+
+        :param sample: a dictionary containing the data for a single graph
+        :return: A dictionary containing the node features and the target variable.
+        """
 
         # Get column keys
         keys = sample.keys
 
         # Construct dict containing all the columns
-        columns = {key: sample[key] for key in keys}
+        columns = sample
 
         # Convert numpy arrays to tensors for each node feature column, and create combined node feature tensor
         columns["coords"] = torch.Tensor(columns["coords"][0])
