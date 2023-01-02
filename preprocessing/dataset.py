@@ -5,8 +5,8 @@ import torch
 from graphein.protein import ProteinGraphConfig
 from sklearn.preprocessing import LabelBinarizer
 from torch_geometric.data import HeteroData, Data
-
-from preprocessing.constants import MOTION_TYPE, PDB, PARAMS_DIR_SUFFIX, PARAMS_CSV_SUFFIX, PARAMS_JSON_SUFFIX
+from preprocessing.constants import MOTION_TYPE, PDB, PARAMS_DIR_SUFFIX, PARAMS_CSV_SUFFIX, PARAMS_JSON_SUFFIX, \
+    NUM_CORES
 from functools import partial
 from graphein.protein.edges.distance import add_hydrogen_bond_interactions, add_peptide_bonds, add_k_nn_edges, \
     add_ionic_interactions
@@ -38,7 +38,6 @@ DATASET_NAME_PRETRAINED: final = "pretrain_cleaned"
 FORMATS: final = frozenset(["pyg", "dgl"])
 VERBOSITIES_CONVERSION: final = frozenset(gmlc.SUPPORTED_VERBOSITY)
 DATASET_TYPES: final = frozenset(["pscdb", "pretrain"])
-NUM_CORES: final = 4
 
 # Local-only constants
 __DATAFRAME_PARAM_NAME: final = "df_param_name"

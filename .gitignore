@@ -8,6 +8,9 @@ data/*
 ds
 ds/
 ds/*
+config
+config/
+config/*
 
 ### CVS template
 /CVS/*

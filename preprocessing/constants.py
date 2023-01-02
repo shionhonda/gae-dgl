@@ -1,5 +1,6 @@
 from typing import final
 import os
+import json
 
 
 # Generic dataset-related constants
@@ -50,3 +51,17 @@ VAL_SIZE_PSCDB: final = 0.15
 TEST_SIZE_PSCDB: final = 0.15
 VAL_SIZE_PRETRAIN: final = 0.20
 TEST_SIZE_PRETRAIN: final = 0.20
+
+
+# Machine-specific config-related constants
+CONFIG_FILES_PATH: final = "config"
+HARDWARE_CONFIG_PATH: final = os.path.join(CONFIG_FILES_PATH, "hardware.json")
+
+# Read hardware config file
+with open(HARDWARE_CONFIG_PATH, "r") as fp:
+    config = json.load(fp)
+    NUM_CORES: final = config["num_cores"]
+    RAM_SIZE: final = config["ram_size"]
+    NUM_GPUS: final = config["num_gpus"]
+    VRAM_SIZE: final = config["vram_size"]
+    del config
