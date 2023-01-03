@@ -45,7 +45,7 @@ __DATAFRAME_PARAM_NAME: final = "df_param_name"
 
 def __load_params(path: str) -> dict[str, Any]:
     """
-    It reads a csv file and a json file containing the parameters, and combines them into a single dictionary.
+    Reads a csv file and a json file containing the parameters, and combines them into a single dictionary.
 
     :param path: str
     :type path: str
@@ -68,13 +68,13 @@ def __load_params(path: str) -> dict[str, Any]:
 
 def __store_params(path: str, **kwargs):
     """
-    It stores the given dataframe as a csv file and the given parameters as a json file
+    Stores the given dataframe as a csv file and the given parameters as a json file.
 
     :param path: str
     :type path: str
     :param df: the dataframe to store
     :type df: pd.DataFrame
-    :param df_param_name: The name of the param eter that contains the dataframe
+    :param df_param_name: The name of the param that contains the dataframe in the dataset creation function
     :type df_param_name: str
     """
     # Store given dataframe as csv 
@@ -96,8 +96,8 @@ def create_dataset_pscdb(df: pd.DataFrame, export_path: str, in_memory: bool = F
                          conversion_verbosity: str = "gnn", store_params: bool = False) -> \
         Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
     """
-    It takes a dataframe, extracts the PDB codes and the labels, creates a graphein config, a graph format converter and
-    a dataset object.
+    Takes a dataframe, extracts the PDB codes and the labels, creates a graphein config, a graph format converter and a
+    dataset object.
 
     :param df: the dataframe containing the PDB codes and the labels
     :type df: pd.DataFrame
@@ -235,7 +235,7 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
                             conversion_verbosity: str = "gnn", store_params: bool = False) -> \
         Union[InMemoryProteinGraphDataset, ProteinGraphDataset]:
     """
-        This function takes in a list of pdb files, and returns a dataset of graphs
+        Takes in a list of pdb files, and returns a dataset of graphs for protein reconstruction.
 
         :param pdb_paths: List[str]
         :type pdb_paths: List[str]
@@ -403,7 +403,7 @@ class NodeFeatureFormatter(BaseTransform):
     @property
     def feature_columns(self) -> list[str]:
         """
-        It returns the list of additional node features.
+        Returns the list of additional node features.
 
         :return: a list of strings representing the additional node features.
         """
@@ -421,31 +421,25 @@ class NodeFeatureFormatter(BaseTransform):
 
     def __call__(self, sample: Union[Data, HeteroData]):
         """
-        It takes a sample from the dataset, and converts the numpy arrays to tensors, and combines the node features
+        Takes a sample from the dataset, and converts the numpy arrays to tensors, and combines the node features
         into a single "x" tensor.
 
         :param sample: a dictionary containing the data for a single graph
         :return: A dictionary containing the node features and the target variable.
         """
 
-        # Get column keys
-        keys = sample.keys
-
-        # Construct dict containing all the columns
-        columns = sample
-
         # Convert numpy arrays to tensors for each node feature column, and create combined node feature tensor
-        columns["coords"] = torch.Tensor(columns["coords"][0])
-        columns["x"] = columns["coords"]
+        sample["coords"] = torch.Tensor(sample["coords"][0])
+        sample["x"] = sample["coords"]
         for feature_col in self.feature_columns:
-            columns[feature_col] = torch.Tensor(columns[feature_col])  # convert to tensor
-            columns["x"] = torch.cat([columns["x"], columns[feature_col]], dim=-1)  # combine node features
+            sample[feature_col] = torch.Tensor(sample[feature_col])  # convert to tensor
+            sample["x"] = torch.cat([sample["x"], sample[feature_col]], dim=-1)  # combine node features
 
         # Add renamed y column if required
-        if "graph_y" in columns:
-            columns["y"] = columns["graph_y"]
+        if "graph_y" in sample:
+            sample["y"] = sample["graph_y"]
 
-        return columns
+        return sample
 
 
 
