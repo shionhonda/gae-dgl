@@ -5,14 +5,18 @@ from torch.utils.data import RandomSampler
 from torch.nn import LayerNorm
 from torch_geometric.nn.models import DeepGraphInfomax
 from torch_geometric.loader import DataLoader
+from torch_geometric.data import Data
 
-def custom_corruption(training_set: DataLoader):
-    return RandomSampler(
+
+def custom_corruption(training_set: DataLoader) -> Data:
+    train_sample = RandomSampler(
         training_set,
         replacement=False,
         num_samples=1,
         generator=None
     )
+    return train_sample
+
 
 class DeepGraphInfomax(torch.nn.Module):
     def __init__(self,
@@ -24,7 +28,7 @@ class DeepGraphInfomax(torch.nn.Module):
                  summary: Callable = None,
                  corruption: Callable = None,
                  dropout: float = 0.0
-        ):
+                 ):
         super().__init__()
         self.norm = LayerNorm(in_channels, elementwise_affine=True)
 
