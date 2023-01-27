@@ -8,17 +8,24 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data
 
 
-def custom_corruption(training_set: DataLoader) -> Data:
+def random_sample_corruption(training_set: DataLoader) -> Data:
+    """
+    Takes a DataLoader and returns a single random sample from it.
+
+    :param training_set: DataLoader
+    :type training_set: DataLoader
+    :return: A single sample from the training set.
+    """
     train_sample = RandomSampler(
-        training_set,
+        training_set,  # remember to create partial of this function when creating infomax
         replacement=False,
         num_samples=1,
         generator=None
     )
-    return train_sample
+    return next(iter(train_sample))
 
 
-class DeepGraphInfomax(torch.nn.Module):
+class DeepGraphInfomaxWrapper(torch.nn.Module):
     def __init__(self,
                  in_channels: int,
                  hidden_channels: int,
