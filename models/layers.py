@@ -1,15 +1,11 @@
 from typing import Union, Optional
+
 import torch
-import torch.nn.functional as F
 from torch import Tensor
-from torch.nn import LayerNorm, Linear
-from torch_sparse import SparseTensor
-from tqdm import tqdm
-from abc import ABC, abstractmethod, abstractproperty
-import torch_geometric.transforms as T
+from torch.nn import LayerNorm
+from torch_geometric.nn.models import deep_graph_infomax as DGI
 # from torch_geometric.loader import RandomNodeLoader
-from torch_geometric.nn import GroupAddRev, SAGEConv, GATv2Conv, GATConv, Aggregation
-from torch_geometric.utils import index_to_mask
+from torch_geometric.nn import SAGEConv, GATv2Conv, GATConv, Aggregation
 
 
 class SAGEConvBlock(torch.nn.Module):
