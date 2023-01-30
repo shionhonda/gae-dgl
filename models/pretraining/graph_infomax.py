@@ -8,7 +8,9 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data
 
 
-def random_sample_corruption(training_set: DataLoader) -> Data:
+
+
+def random_sample_corruption(training_set: DataLoader, graph: Data) -> Data:
     """
     Takes a DataLoader and returns a single random sample from it.
 
@@ -16,13 +18,16 @@ def random_sample_corruption(training_set: DataLoader) -> Data:
     :type training_set: DataLoader
     :return: A single sample from the training set.
     """
-    train_sample = RandomSampler(
-        training_set,  # remember to create partial of this function when creating infomax
-        replacement=False,
-        num_samples=1,
-        generator=None
-    )
-    return next(iter(train_sample))
+    corrupted_graph = graph
+    while corrupted_graph.edge_index == graph.edge_index:
+        train_sample = RandomSampler(
+            training_set,
+            replacement=False,
+            num_samples=1,
+            generator=None
+        )
+        corrupted_graph = next(iter(train_sample))
+    return corrupted_graph
 
 
 class DeepGraphInfomaxWrapper(torch.nn.Module):

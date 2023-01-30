@@ -237,7 +237,7 @@ def create_dataset_pretrain(pdb_paths: List[str], export_path: str, in_memory: b
     """
         Takes in a list of pdb files, and returns a dataset of graphs for protein reconstruction.
 
-        :param pdb_paths: List[str]
+        :param pdb_paths: List[str]8
         :type pdb_paths: List[str]
         :param export_path: The path to the directory where the dataset will be stored
         :type export_path: str
