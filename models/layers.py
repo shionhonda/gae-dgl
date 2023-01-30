@@ -1,11 +1,10 @@
 from typing import Union, Optional
-
 import torch
 from torch import Tensor
 from torch.nn import LayerNorm
-from torch_geometric.nn.models import deep_graph_infomax as DGI
-# from torch_geometric.loader import RandomNodeLoader
-from torch_geometric.nn import SAGEConv, GATv2Conv, GATConv, Aggregation
+from torch_geometric.nn.conv import SAGEConv, GATv2Conv, GATConv, GCNConv, GCN2Conv
+from torch_geometric.nn.aggr import Aggregation
+from torch_geometric.typing import OptTensor, Adj
 
 
 class SAGEConvBlock(torch.nn.Module):
@@ -94,7 +93,7 @@ class GATConvBlock(torch.nn.Module):
                  concat: bool = False, negative_slope: float = 0.2, dropout: float = 0.0, bias: bool = True,
                  add_self_loops: bool = True, edge_dim: Optional[int] = None,
                  fill_value: Union[float, Tensor, str] = 'mean', **kwargs):
-        r"""The graph attentional operator from the `"Graph Attention Networks"
+        r"""The graph attentional operator from the `"Graph Attention Networks, paired with a normalization layer."
             <https://arxiv.org/abs/1710.10903>`_ paper
 
             .. math::
@@ -132,7 +131,7 @@ class GATConvBlock(torch.nn.Module):
                 in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
                     derive the size from the first input(s) to the forward method.
                     A tuple corresponds to the sizes of source and target
-                    dimensionalities.
+                    dimensionality.
                 out_channels (int): Size of each output sample.
                 heads (int, optional): Number of multi-head-attentions.
                     (default: :obj:`1`)
@@ -214,8 +213,177 @@ class GATConvBlock(torch.nn.Module):
         self.norm.reset_parameters()
         self.conv.reset_parameters()
 
-    def forward(self, x, edge_index, dropout_mask=None):
+    def forward(self, x, edge_index, edge_attr=None, dropout_mask=None):
         x = self.norm(x).relu()
         if self.training and dropout_mask is not None:
             x = x * dropout_mask
-        return self.conv(x, edge_index)
+        return self.conv(x, edge_index, edge_attr=edge_attr)
+
+
+class GCNConvBlock(torch.nn.Module):
+    def __init__(self, in_channels: int, out_channels: int, improved: bool = False, cached: bool = False,
+                 add_self_loops: bool = True, normalize: bool = True, bias: bool = True, **kwargs):
+        r"""The graph convolutional operator from the `"Semi-supervised
+            Classification with Graph Convolutional Networks"
+            <https://arxiv.org/abs/1609.02907>`_ paper, paired with a normalization layer.
+
+            .. math::
+                \mathbf{X}^{\prime} = \mathbf{\hat{D}}^{-1/2} \mathbf{\hat{A}}
+                \mathbf{\hat{D}}^{-1/2} \mathbf{X} \mathbf{\Theta},
+
+            where :math:`\mathbf{\hat{A}} = \mathbf{A} + \mathbf{I}` denotes the
+            adjacency matrix with inserted self-loops and
+            :math:`\hat{D}_{ii} = \sum_{j=0} \hat{A}_{ij}` its diagonal degree matrix.
+            The adjacency matrix can include other values than :obj:`1` representing
+            edge weights via the optional :obj:`use_edge_weight` tensor.
+
+            Its node-wise formulation is given by:
+
+            .. math::
+                \mathbf{x}^{\prime}_i = \mathbf{\Theta}^{\top} \sum_{j \in
+                \mathcal{N}(v) \cup \{ i \}} \frac{e_{j,i}}{\sqrt{\hat{d}_j
+                \hat{d}_i}} \mathbf{x}_j
+
+            with :math:`\hat{d}_i = 1 + \sum_{j \in \mathcal{N}(i)} e_{j,i}`, where
+            :math:`e_{j,i}` denotes the edge weight from source node :obj:`j` to target
+            node :obj:`i` (default: :obj:`1.0`)
+
+            Args:
+                in_channels (int): Size of each input sample, or :obj:`-1` to derive
+                    the size from the first input(s) to the forward method.
+                out_channels (int): Size of each output sample.
+                improved (bool, optional): If set to :obj:`True`, the layer computes
+                    :math:`\mathbf{\hat{A}}` as :math:`\mathbf{A} + 2\mathbf{I}`.
+                    (default: :obj:`False`)
+                cached (bool, optional): If set to :obj:`True`, the layer will cache
+                    the computation of :math:`\mathbf{\hat{D}}^{-1/2} \mathbf{\hat{A}}
+                    \mathbf{\hat{D}}^{-1/2}` on first execution, and will use the
+                    cached version for further executions.
+                    This parameter should only be set to :obj:`True` in transductive
+                    learning scenarios. (default: :obj:`False`)
+                add_self_loops (bool, optional): If set to :obj:`False`, will not add
+                    self-loops to the input graph. (default: :obj:`True`)
+                normalize (bool, optional): Whether to add self-loops and compute
+                    symmetric normalization coefficients on the fly.
+                    (default: :obj:`True`)
+                bias (bool, optional): If set to :obj:`False`, the layer will not learn
+                    an additive bias. (default: :obj:`True`)
+                **kwargs (optional): Additional arguments of
+                    :class:`torch_geometric.nn.conv.MessagePassing`.
+
+            Shapes:
+                - **input:**
+                  node features :math:`(|\mathcal{V}|, F_{in})`,
+                  edge indices :math:`(2, |\mathcal{E}|)`,
+                  edge weights :math:`(|\mathcal{E}|)` *(optional)*
+                - **output:** node features :math:`(|\mathcal{V}|, F_{out})`
+            """
+
+        super().__init__()
+        self.norm = LayerNorm(in_channels, elementwise_affine=True)
+
+        self.conv = GCNConv(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            improved=improved,
+            cached=cached,
+            add_self_loops=add_self_loops,
+            normalize=normalize,
+            bias=bias,
+            **kwargs
+        )
+
+    def reset_parameters(self):
+        self.norm.reset_parameters()
+        self.conv.reset_parameters()
+
+    def forward(self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None, dropout_mask=None):
+        x = self.norm(x).relu()
+        if self.training and dropout_mask is not None:
+            x = x * dropout_mask
+        return self.conv(x, edge_index, edge_weight=edge_weight)
+
+
+class GCN2ConvBlock(torch.nn.Module):
+    def __init__(self, channels: int, alpha: float, theta: float = None, layer: int = None, shared_weights: bool = True,
+                 cached: bool = False, add_self_loops: bool = True, normalize: bool = True, **kwargs):
+        r"""The graph convolutional operator with initial residual connections and
+            identity mapping (GCNII) from the `"Simple and Deep Graph Convolutional
+            Networks" <https://arxiv.org/abs/2007.02133>`_ paper, paired with a normalization layer.
+
+            .. math::
+                \mathbf{X}^{\prime} = \left( (1 - \alpha) \mathbf{\hat{P}}\mathbf{X} +
+                \alpha \mathbf{X^{(0)}}\right) \left( (1 - \beta) \mathbf{I} + \beta
+                \mathbf{\Theta} \right)
+
+            with :math:`\mathbf{\hat{P}} = \mathbf{\hat{D}}^{-1/2} \mathbf{\hat{A}}
+            \mathbf{\hat{D}}^{-1/2}`, where
+            :math:`\mathbf{\hat{A}} = \mathbf{A} + \mathbf{I}` denotes the adjacency
+            matrix with inserted self-loops and
+            :math:`\hat{D}_{ii} = \sum_{j=0} \hat{A}_{ij}` its diagonal degree matrix,
+            and :math:`\mathbf{X}^{(0)}` being the initial feature representation.
+            Here, :math:`\alpha` models the strength of the initial residual
+            connection, while :math:`\beta` models the strength of the identity
+            mapping.
+            The adjacency matrix can include other values than :obj:`1` representing
+            edge weights via the optional :obj:`use_edge_weight` tensor.
+
+            Args:
+                channels (int): Size of each input and output sample.
+                alpha (float): The strength of the initial residual connection
+                    :math:`\alpha`.
+                theta (float, optional): The hyperparameter :math:`\theta` to compute
+                    the strength of the identity mapping
+                    :math:`\beta = \log \left( \frac{\theta}{\ell} + 1 \right)`.
+                    (default: :obj:`None`)
+                layer (int, optional): The layer :math:`\ell` in which this module is
+                    executed. (default: :obj:`None`)
+                shared_weights (bool, optional): If set to :obj:`False`, will use
+                    different weight matrices for the smoothed representation and the
+                    initial residual ("GCNII*"). (default: :obj:`True`)
+                cached (bool, optional): If set to :obj:`True`, the layer will cache
+                    the computation of :math:`\mathbf{\hat{D}}^{-1/2} \mathbf{\hat{A}}
+                    \mathbf{\hat{D}}^{-1/2}` on first execution, and will use the
+                    cached version for further executions.
+                    This parameter should only be set to :obj:`True` in transductive
+                    learning scenarios. (default: :obj:`False`)
+                normalize (bool, optional): Whether to add self-loops and apply
+                    symmetric normalization. (default: :obj:`True`)
+                add_self_loops (bool, optional): If set to :obj:`False`, will not add
+                    self-loops to the input graph. (default: :obj:`True`)
+                **kwargs (optional): Additional arguments of
+                    :class:`torch_geometric.nn.conv.MessagePassing`.
+
+            Shapes:
+                - **input:**
+                  node features :math:`(|\mathcal{V}|, F)`,
+                  initial node features :math:`(|\mathcal{V}|, F)`,
+                  edge indices :math:`(2, |\mathcal{E}|)`,
+                  edge weights :math:`(|\mathcal{E}|)` *(optional)*
+                - **output:** node features :math:`(|\mathcal{V}|, F)`
+            """
+
+        super().__init__()
+        self.norm = LayerNorm(channels, elementwise_affine=True)
+
+        self.conv = GCN2Conv(
+            channels=channels,
+            alpha=alpha,
+            theta=theta,
+            layer=layer,
+            cached=cached,
+            shared_weights=shared_weights,
+            add_self_loops=add_self_loops,
+            normalize=normalize,
+            **kwargs
+        )
+
+    def reset_parameters(self):
+        self.norm.reset_parameters()
+        self.conv.reset_parameters()
+
+    def forward(self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None, dropout_mask=None):
+        x = self.norm(x).relu()
+        if self.training and dropout_mask is not None:
+            x = x * dropout_mask
+        return self.conv(x, edge_index, edge_weight=edge_weight)
