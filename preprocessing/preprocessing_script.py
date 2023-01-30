@@ -83,7 +83,7 @@ def main():
 
     # Create data loader to check if everything's ok
     dl = DataLoader(ds_pt_train, batch_size=2, shuffle=True, drop_last=True)
-    for el in dl:
+    for el in iter(dl):
         print(el)
         break
 
@@ -91,7 +91,7 @@ def main():
     ds2 = load_dataset(PRETRAIN_CLEANED_TRAIN, dataset_type="pretrain")
     # ds2 = load_dataset(PSCDB_CLEANED_TRAIN, dataset_type="pscdb")
     dl = DataLoader(ds2, batch_size=2, shuffle=True, drop_last=True)
-    for el in dl:
+    for el in iter(dl):
         print(el)
         break
 
