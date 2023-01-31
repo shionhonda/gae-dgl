@@ -13,8 +13,8 @@ from preprocessing.utils import pscdb_read, get_uniprot_IDs_and_pdb_codes, train
 
 def main():
     # Read raw data
-    df = pscdb_read(PSCDB_PATH)
-    df2 = df.iloc[0:10]
+    df = pscdb_read(PSCDB_PATH, drop_duplicate_pdb_codes=True)
+    df2 = df.iloc[0:-1]
 
     uniprots, pdbs, pdb_paths = get_uniprot_IDs_and_pdb_codes(PATH_PDBS_JSON)
 
@@ -71,13 +71,13 @@ def main():
     ds_pt_val = create_dataset_pretrain(
         pdb_paths=pdb_paths_val,
         export_path=PRETRAIN_CLEANED_VAL,
-        in_memory=True,
+        in_memory=False,
         store_params=True
     )
     ds_pt_test = create_dataset_pretrain(
         pdb_paths=pdb_paths_test,
         export_path=PRETRAIN_CLEANED_TEST,
-        in_memory=True,
+        in_memory=False,
         store_params=True
     )
 
@@ -89,6 +89,7 @@ def main():
 
     # Load the dataset and create the data loader to check if everything's ok
     ds2 = load_dataset(PRETRAIN_CLEANED_TRAIN, dataset_type="pretrain")
+    print(len(ds2))
     # ds2 = load_dataset(PSCDB_CLEANED_TRAIN, dataset_type="pscdb")
     dl = DataLoader(ds2, batch_size=2, shuffle=True, drop_last=True)
     for el in iter(dl):
