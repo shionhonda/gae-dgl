@@ -1,12 +1,11 @@
 import os
 import shutil
 from torch_geometric.loader import DataLoader
-from preprocessing.constants import PSCDB_PATH, PSCDB_CLEANED_TRAIN, PRETRAIN_CLEANED_TRAIN, UNIPROTS_KEY, PDBS_KEY, \
-    PATH_PDBS_JSON, PRETRAIN_CLEANED_VAL, PRETRAIN_CLEANED_TEST, PSCDB_CLEANED_VAL, PSCDB_CLEANED_TEST, \
+from preprocessing.constants import PSCDB_PATH, PSCDB_CLEANED_TRAIN, PRETRAIN_CLEANED_TRAIN, PATH_PDBS_JSON, \
+    PRETRAIN_CLEANED_VAL, PRETRAIN_CLEANED_TEST, PSCDB_CLEANED_VAL, PSCDB_CLEANED_TEST, \
     VAL_SIZE_PSCDB, TEST_SIZE_PSCDB, VAL_SIZE_PRETRAIN, TEST_SIZE_PRETRAIN, RANDOM_SEED, PSCDB_PDBS_SUFFIX, \
     PATH_PDBS_DIR
-from preprocessing.dataset import create_dataset_pscdb, create_dataset_pretrain, load_dataset, DATASET_NAME_PSCDB, \
-    DATASET_NAME_PRETRAINED
+from preprocessing.dataset import create_dataset_pscdb, create_dataset_pretrain, load_dataset
 from preprocessing.utils import pscdb_read, get_uniprot_IDs_and_pdb_codes, train_test_validation_split, \
     get_pdb_paths_pscdb
 
@@ -83,18 +82,43 @@ def main():
 
     # Create data loader to check if everything's ok
     dl = DataLoader(ds_pt_train, batch_size=2, shuffle=True, drop_last=True)
-    for el in iter(dl):
-        print(el)
-        break
+    print(len(dl))
+    print(next(iter(dl)))
+
+    # Create data loader to check if everything's ok
+    dl = DataLoader(ds_pt_val, batch_size=2, shuffle=True, drop_last=True)
+    print(len(dl))
+    print(next(iter(dl)))
+
+    # Create data loader to check if everything's ok
+    dl = DataLoader(ds_pt_test, batch_size=2, shuffle=True, drop_last=True)
+    print(len(dl))
+    print(next(iter(dl)))
+
+    # Create data loader to check if everything's ok
+    dl = DataLoader(ds_cl_train, batch_size=2, shuffle=True, drop_last=True)
+    print(len(dl))
+    print(next(iter(dl)))
+
+    # Create data loader to check if everything's ok
+    dl = DataLoader(ds_cl_val, batch_size=2, shuffle=True, drop_last=True)
+    print(len(dl))
+    print(next(iter(dl)))
+
+    # Create data loader to check if everything's ok
+    dl = DataLoader(ds_cl_test, batch_size=2, shuffle=True, drop_last=True)
+    print(len(dl))
+    print(next(iter(dl)))
 
     # Load the dataset and create the data loader to check if everything's ok
     ds2 = load_dataset(PRETRAIN_CLEANED_TRAIN, dataset_type="pretrain")
     print(len(ds2))
-    # ds2 = load_dataset(PSCDB_CLEANED_TRAIN, dataset_type="pscdb")
     dl = DataLoader(ds2, batch_size=2, shuffle=True, drop_last=True)
-    for el in iter(dl):
-        print(el)
-        break
+    print(next(iter(dl)))
+
+    ds3 = load_dataset(PSCDB_CLEANED_TRAIN, dataset_type="pscdb")
+    dl = DataLoader(ds3, batch_size=2, shuffle=True, drop_last=True)
+    print(next(iter(dl)))
 
 
 if __name__ == '__main__':
