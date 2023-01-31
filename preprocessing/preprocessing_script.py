@@ -50,9 +50,9 @@ def main():
     pdb_paths_test = pdb_paths_test + pscdb_pdb_paths_test
 
     # Create PSCDB classification datasets
-    ds_cl_train = create_dataset_pscdb(df_train, export_path=PSCDB_CLEANED_TRAIN, in_memory=True, store_params=True)
-    ds_cl_val = create_dataset_pscdb(df_val, export_path=PSCDB_CLEANED_VAL, in_memory=True, store_params=True)
-    ds_cl_test = create_dataset_pscdb(df_test, export_path=PSCDB_CLEANED_TEST, in_memory=True, store_params=True)
+    ds_cl_train = create_dataset_pscdb(df_train, export_path=PSCDB_CLEANED_TRAIN, in_memory=False, store_params=True)
+    ds_cl_val = create_dataset_pscdb(df_val, export_path=PSCDB_CLEANED_VAL, in_memory=False, store_params=True)
+    ds_cl_test = create_dataset_pscdb(df_test, export_path=PSCDB_CLEANED_TEST, in_memory=False, store_params=True)
 
     # Copy PSCDB .pdb files to AlphaFold directory, otherwise pre-train dataset creation wont work cuz: "graphein cool!"
     copy_all_pscdb_files = input("Copy all PSCDB .pdb files to alphafold directory (0: no, 1: yes)? ")
