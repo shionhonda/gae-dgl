@@ -26,19 +26,39 @@ def get_uniprot_IDs_and_pdb_codes(path: str) -> tuple[list[str], list[str], list
         return uniprotIDs, pdbIDs, paths
 
 
-def pscdb_read(path: str):
+def pscdb_read(path: str, drop_duplicate_pdb_codes: bool = True) -> pd.DataFrame:
     """
-    It reads the CSV file at the given path, drops all columns except the ones we want, and renames the columns to the
+    Reads the CSV file at the given path, drops all columns except the ones we want, and renames the columns to the
     names we want.
 
     :param path: the path to the csv file
     :type path: str
-    :return: A dataframe with the columns we want.
+    :param drop_duplicate_pdb_codes: if True, then duplicate PDB codes will be dropped when the dataframe is read,
+        defaults to True.
+    :type drop_duplicate_pdb_codes: bool
+    :return: A dataframe corresponding to the PSCDB dataset.
     """
     df = pd.read_csv(path)
     df = df.drop(df.columns.difference(USED_COLUMNS.keys()), axis=1)
     df = df.rename(columns=USED_COLUMNS)
+
+    # Remove duplicates if required
+    if drop_duplicate_pdb_codes:
+        df = get_unique_pdbs(df)
+
     return df
+
+
+def get_unique_pdbs(pscdb: pd.DataFrame) -> pd.DataFrame:
+    """
+    Gets unique rows from PSCDB dataframe, with respect to the PDB-code column.
+
+    :param pscdb: the dataframe containing the PSCDB data
+    :type pscdb: pd.DataFrame
+
+    :return: the pscdb dataframe without duplicate PDB codes.
+    """
+    return pscdb.drop_duplicates(subset=[PDB])
 
 
 def get_pdb_paths_pscdb(pscdb: pd.DataFrame, root_path: str) -> List[str]:
