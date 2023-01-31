@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 DEFAULT_METRICS: final = frozenset(["train_loss", "val_loss"])
 METRIC_TRACER_DEFAULT: final = "metric_tracer"
 FIGURE_SIZE_DEFAULT: final = (10, 8)
+EARLY_STOP_PATIENCE: final = 10
 
 
 # Class from Bjarten's early-stopping-pytorch repository. All credits go to him and the other contributors.
@@ -14,7 +15,7 @@ FIGURE_SIZE_DEFAULT: final = (10, 8)
 class EarlyStopping(object):
     """Early stops the training if validation loss doesn't improve after a given patience."""
 
-    def __init__(self, patience=7, verbose=False, delta=0, path='checkpoint.pt', trace_func=print):
+    def __init__(self, patience=EARLY_STOP_PATIENCE, verbose=False, delta=0, path='checkpoint.pt', trace_func=print):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -85,6 +86,10 @@ class MetricsHistoryTracer(object):
     def name(self, name: str):
         self.__name = name
 
+    @property
+    def metrics(self) -> list[str]:
+        return list(self.__metrics.keys())
+
     def get_metric(self, metric: str):
         """
        Returns the value of the metric specified by the user.
@@ -136,7 +141,7 @@ class MetricsHistoryTracer(object):
         # Create the figure
         plt.style.use("dark_background")  # set dark background
         fig = plt.figure(figsize=figsize)
-        plt.title(self.name)  # set the plot title
+        title = f"{self.name}: "
         x_limit = -1
         y_limit = -1
 
@@ -161,13 +166,16 @@ class MetricsHistoryTracer(object):
             if np.abs(max_m) > y_limit:
                 y_limit = np.abs(max_m)
 
+            title = f"{title} {metric}"
+
         if x_limit == -1:
             x_limit = 1
 
         if y_limit == -1:
             y_limit = 1
 
-        # Axes parameters
+        # Other parameters
+        plt.title(self.name)  # set the plot title
         plt.ylabel('metric')
         plt.ylim(0, y_limit + int(y_limit)/50)  # consistent scale
         plt.xlim(0, x_limit + int(x_limit)/50)  # consistent scale

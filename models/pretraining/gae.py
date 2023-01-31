@@ -1,9 +1,12 @@
+import os
 from typing import Optional
 import torch
 from torch_geometric.loader import DataLoader
 from torch_geometric.nn.models.autoencoder import GAE
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.utils import negative_sampling
+
+from training.training_tools import FIGURE_SIZE_DEFAULT, MetricsHistoryTracer, EarlyStopping, EARLY_STOP_PATIENCE
 
 
 class GAEv2(GAE):
@@ -95,9 +98,9 @@ def test_step_gae(model: GAEv2, val_data: DataLoader, device, use_edge_weight: b
     return float(running_val_loss), running_auc, running_precision
 
 
-def train_gae(model: GAEv2, train_data: DataLoader, val_data: DataLoader, epochs: int, optimizer, experiment_path: str,
-              experiment_name: str, use_edge_weight: bool = False, use_edge_attr: bool = False):
-
+def train_vgae(model: GAEv2, train_data: DataLoader, val_data: DataLoader, epochs: int, optimizer,
+               experiment_path: str, experiment_name: str, use_edge_weight: bool = False, use_edge_attr: bool = False,
+               early_stopping_patience: int = EARLY_STOP_PATIENCE, early_stopping_delta: float = 0) -> torch.nn.Module:
     # Move model to device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
@@ -105,8 +108,22 @@ def train_gae(model: GAEv2, train_data: DataLoader, val_data: DataLoader, epochs
     # Instantiate the summary writer
     writer = SummaryWriter(f'{experiment_path}_{experiment_name}_{epochs}_epochs')
 
-    for epoch in range(0, epochs):
+    # Early-stopping monitor
+    checkpoint_path = os.path.join(f"{experiment_path}", "checkpoint.pt")
+    monitor = EarlyStopping(
+        patience=early_stopping_patience,
+        verbose=True,
+        delta=early_stopping_delta,
+        path=checkpoint_path
+    )
 
+    # Metric history trace object
+    mht = MetricsHistoryTracer(
+        metrics=['train_loss', 'val_loss', 'auc_val', 'avg_precision_val'],
+        name="VGAE training metrics"
+    )
+
+    for epoch in range(0, epochs):
         # Do train step
         train_loss = train_step_gae(
             model=model,
@@ -124,13 +141,52 @@ def train_gae(model: GAEv2, train_data: DataLoader, val_data: DataLoader, epochs
             device=device,
             use_edge_weight=use_edge_weight,
             use_edge_attr=use_edge_attr
-        )  # validation metrics
+        )
 
         print('Epoch: {:d}, Train loss: {:.4f}, Validation loss {:.4f}, '
               'AUC: {:.4f}, Average precision: {:.4f}'.format(epoch, train_loss, val_loss, auc, avg_precision))
 
-        # Update tensorboard state
+        # Tensorboard state update
         writer.add_scalar('train_loss', train_loss, epoch)
         writer.add_scalar('auc_val', auc, epoch)  # new line
         writer.add_scalar('val_loss', val_loss, epoch)
         writer.add_scalar('avg_precision_val', avg_precision, epoch)  # new line
+
+        # Check for early-stopping stuff
+        monitor(val_loss, model)
+        if monitor.early_stop:
+            print(f"Epoch {epoch}: early stopping, restoring model checkpoint {checkpoint_path}...")
+            break
+
+        # Metrics history update
+        mht.add_scalar('train_loss', train_loss)
+        mht.add_scalar('val_loss', val_loss)
+        mht.add_scalar('auc_val', auc)
+        mht.add_scalar('avg_precision_val', avg_precision)
+
+    # Plot the metrics
+    mht.plot_metrics(
+        ['train_loss', 'val_loss'],
+        figsize=FIGURE_SIZE_DEFAULT,
+        traced_min_metric='val_loss',
+        store_path=os.path.join(f"{experiment_path}", "loss.svg")
+    )
+
+    mht.plot_metrics(
+        ['auc_val'],
+        figsize=FIGURE_SIZE_DEFAULT,
+        traced_min_metric='auc_val',
+        store_path=os.path.join(f"{experiment_path}", "auc.svg")
+    )
+
+    mht.plot_metrics(
+        ['avg_precision_val'],
+        figsize=FIGURE_SIZE_DEFAULT,
+        traced_min_metric='avg_precision_val',
+        store_path=os.path.join(f"{experiment_path}", "avg_precision.svg")
+    )
+
+    # Load best model
+    model.load_state_dict(torch.load(checkpoint_path))
+
+    return model

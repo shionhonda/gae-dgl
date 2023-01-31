@@ -8,3 +8,11 @@ CORRUPTION_FUNC = partial(
     random_sample_corruption,
     TRAINING_SET
 )
+
+
+
+def main():
+    model = DGI
+
+
+
